@@ -1,4 +1,4 @@
-include ../../../build/lib_c_src.mk
+include ../../main/build/lib_c_src.mk
 
 CFLAGS+=-finline-functions -std=c99 -Wall -Werror -O # -DDEBUG
 LDFLAGS+=-shared

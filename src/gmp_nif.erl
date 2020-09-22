@@ -6,7 +6,7 @@
 %% Exported: init
 
 init() ->
-    ok = erlang:load_nif(filename:join(code:priv_dir(sstdlib), ?MODULE), 0).
+    ok = erlang:load_nif(filename:join(code:priv_dir(mpa), ?MODULE), 0).
 
 %% Exported: dlog
 
