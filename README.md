@@ -1,4 +1,4 @@
-# Multiple precision arithmetic library 
+# Multiple precision arithmetic
 
 ```
 ./lib/sstdlib/src/mpz.erl
