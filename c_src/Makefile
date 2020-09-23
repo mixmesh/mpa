@@ -1,4 +1,9 @@
-include ../../main/build/lib_c_src.mk
+#@BEGIN-C_SRC-DEFAULT-RULES@
+ERL=$(shell readlink -f `which erl`)
+ERL_TOP=$(ERL:%/bin/erl=%)
+OS=$(shell uname -s)
+CFLAGS=-I$(ERL_TOP)/usr/include
+#@END-C_SRC-DEFAULT-RULES@
 
 CFLAGS+=-finline-functions -std=c99 -Wall -Werror -O # -DDEBUG
 LDFLAGS+=-shared
