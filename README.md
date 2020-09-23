@@ -1,10 +1,10 @@
-# Multiple precision arithmetic library 
+# Multiple precision arithmetic
 
 ```
-./lib/sstdlib/src/mpz.erl
-./lib/sstdlib/src/gmp_nif.erl
-./lib/sstdlib/c_src/gmp_nif.c
-./lib/sstdlib/c_src/dloglib.c
+./lib/mpa/src/mpz.erl
+./lib/mpa/src/gmp_nif.erl
+./lib/mpa/c_src/gmp_nif.c
+./lib/mpa/c_src/dloglib.c
 ```
 
 The mpz module makes a number of functions available from GMP:
