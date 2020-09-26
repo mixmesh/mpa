@@ -1,11 +1,21 @@
 # Multiple precision arithmetic
 
-```
-./lib/mpa/src/mpz.erl
-./lib/mpa/src/gmp_nif.erl
-./lib/mpa/c_src/gmp_nif.c
-./lib/mpa/c_src/dloglib.c
-```
+An Erlang NIF library to provide access to https://gmplib.org/ with additional functionality to solve the discrete logarithm.
+
+## Files
+
+<dl>
+  <dt>./src/mpz.erl</dt>
+  <dd>The API module</dd>
+  <dt>./src/gmp_nif.erl</dt>
+  <dd>The Erlang part of the NIF adaption, i.e. used by mpz</dd>
+  <dt>./src/gmp_nif.c</dt>
+  <dd>The C part of the NIF adaption used by the gmp_nif module</dd>
+  <dt>./src/dloglib.c</dt>
+  <dd>Additional C code to solve the discrete logarithm using the Pollard's rho-method</dd>
+</dl>
+
+## Additional information
 
 The mpz module makes a number of functions available from GMP:
 
