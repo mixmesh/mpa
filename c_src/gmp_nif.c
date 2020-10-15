@@ -411,7 +411,7 @@ static ERL_NIF_TERM _mpz_powm(ErlNifEnv* env, int argc,
 static ERL_NIF_TERM _mpz_pow_ui(ErlNifEnv* env, int argc,
                                 const ERL_NIF_TERM argv[]) {
   OPEN_LOG;
-  LOG("**** mpz_probab_prime_p\n");
+  LOG("**** mpz_pow_ui\n");
 
   ErlNifBinary base_bin;
   if (!enif_inspect_binary(env, argv[0], &base_bin)) {
