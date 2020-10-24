@@ -7,6 +7,7 @@
          powm/3,
          pow_ui/2,
          probab_prime_p/2]).
+-export([big_powm/3]).
 
 %% Exported: dlog
 
@@ -49,6 +50,9 @@ powm(Base, Exp, Mod) ->
     gmp_nif:mpz_powm(binary:encode_unsigned(Base),
                      binary:encode_unsigned(Exp),
                      binary:encode_unsigned(Mod))).
+
+big_powm(Base, Exp, Mod) ->
+    gmp_nif:big_powm(Base, Exp, Mod).
 
 %% Exported: pow_ui
 

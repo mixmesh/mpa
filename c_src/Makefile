@@ -8,16 +8,15 @@ CFLAGS=-I$(ERL_TOP)/usr/include
 CFLAGS+=-finline-functions -std=c99 -Wall -Werror -O # -DDEBUG
 LDFLAGS+=-shared
 
+OBJS = gmp_nif.o dloglib.o erl_nif_big.o
+
 all: ../priv/gmp_nif.so
 
-../priv/gmp_nif.so: gmp_nif.o dloglib.o
-	$(CC) $(LDFLAGS) gmp_nif.o dloglib.o $(ERL_TOP)/usr/lib/libei.a -lgmp -o ../priv/gmp_nif.so
+../priv/gmp_nif.so: $(OBJS)
+	$(CC) $(LDFLAGS) $(OBJS) $(ERL_TOP)/usr/lib/libei.a -lgmp -o ../priv/gmp_nif.so
 
-gmp_nif.o: gmp_nif.c
-	$(CC) $(CFLAGS) -c -fPIC gmp_nif.c -o gmp_nif.o
-
-dloglib.o: dloglib.c
-	$(CC) $(CFLAGS) -c -fPIC dloglib.c -o dloglib.o
+%.o:	%.c
+	$(CC) $(CFLAGS) -c -fPIC $<
 
 # For test purposes
 dlog: dlog.c

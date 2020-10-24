@@ -1,6 +1,7 @@
 -module(gmp_nif).
 -export([dlog/3, generate_safe_prime/1, mpz_gcd/2, mpz_invert/2, mpz_lcm/2,
          mpz_powm/3, mpz_pow_ui/2, mpz_probab_prime_p/2]).
+-export([big_powm/3]).
 -on_load(init/0).
 
 %% Exported: init
@@ -46,4 +47,7 @@ mpz_pow_ui(_Base, _Exp) ->
 %% Exported: mpz_probab_prime_p
 
 mpz_probab_prime_p(_N, _Reps) ->
+    exit(nif_library_not_loaded).
+
+big_powm(_Base, _Exp, _Mod) ->
     exit(nif_library_not_loaded).

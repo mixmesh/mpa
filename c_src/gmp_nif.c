@@ -404,6 +404,7 @@ static ERL_NIF_TERM _mpz_powm(ErlNifEnv* env, int argc,
   }
 }
 
+
 /*
  * mpz_pow_ui
  */
@@ -486,6 +487,72 @@ static ERL_NIF_TERM _mpz_probab_prime_p(ErlNifEnv* env, int argc,
   return enif_make_int(env, result);
 }
 
+#include "erl_nif_big.h"
+
+void import_big(mpz_t n, ErlNifBignum *big)
+{
+    mpz_import(n, big->size, -1, sizeof(ErlNifBigDigit), 0, 0, big->digits);
+}
+
+ERL_NIF_TERM make_big(ErlNifEnv* env, mpz_t zr)
+{
+    ErlNifBignum r;
+    size_t size = (mpz_sizeinbase(zr, 2) + (8*sizeof(ErlNifBigDigit)) -1) /
+	(8*sizeof(ErlNifBigDigit));
+    size_t ndigits;
+    ErlNifBigDigit ds[size]; // GCC stack allocation
+    
+    mpz_export((void *)ds, &ndigits, -1, sizeof(ErlNifBigDigit), 0, 0, zr);
+    r.size = ndigits;
+    r.sign = 0;
+    r.digits = ds;
+    return enif_make_number(env, &r);
+}
+
+/*
+ * big_powm using erl_nif_big for marshalling (remove some overhead)
+ */
+
+static ERL_NIF_TERM big_powm(ErlNifEnv* env, int argc,
+			     const ERL_NIF_TERM argv[])
+{
+    ErlNifBignum a;
+    ErlNifBignum n;
+    ErlNifBignum mod;
+    mpz_t za;
+    mpz_t zn;
+    mpz_t zmod;
+    mpz_t zr;
+    ERL_NIF_TERM r;
+    
+    if (!enif_get_number(env, argv[0], &a))
+	return enif_make_badarg(env);
+    if (!enif_get_number(env, argv[1], &n))
+	return enif_make_badarg(env);
+    if (!enif_get_number(env, argv[2], &mod))
+	return enif_make_badarg(env);
+
+    mpz_init(za);
+    import_big(za, &a);
+
+    mpz_init(zn);
+    import_big(zn, &n);
+
+    mpz_init(zmod);
+    import_big(zmod, &mod);
+
+    mpz_init(zr);
+    mpz_powm(zr, za, zn, zmod);
+
+    r = make_big(env, zr);
+    mpz_clear(za);
+    mpz_clear(zn);
+    mpz_clear(zmod);
+    mpz_clear(zr);
+    return r;
+}
+
+
 static ErlNifFunc nif_funcs[] = {
   {"dlog", 3, _dlog, ERL_NIF_DIRTY_JOB_CPU_BOUND},
   {"generate_safe_prime", 1, _generate_safe_prime, ERL_NIF_DIRTY_JOB_CPU_BOUND},
@@ -494,7 +561,8 @@ static ErlNifFunc nif_funcs[] = {
   {"mpz_lcm", 2, _mpz_lcm},
   {"mpz_powm", 3, _mpz_powm},
   {"mpz_pow_ui", 2, _mpz_pow_ui},
-  {"mpz_probab_prime_p", 2, _mpz_probab_prime_p}
+  {"mpz_probab_prime_p", 2, _mpz_probab_prime_p},
+  {"big_powm", 3, big_powm},
 };
 
 static int load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info) {
@@ -517,9 +585,12 @@ bool export_binary(ErlNifBinary *bin, mpz_t n) {
   }
   size_t countp;
   mpz_export((void *)bin->data, &countp, 1, 1, 0, 0, n);
+  // empty loop is probably removed, but you never know...
+#ifdef DEBUG  
   for (int i = 0; i < countp; i++) {
     LOG("[%d] -> %d\n", i, bin->data[i]);
   }
+#endif
   return true;
 }
 
