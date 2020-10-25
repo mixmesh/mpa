@@ -85,6 +85,10 @@ static ERL_NIF_TERM _dlog(ErlNifEnv* env, int argc,
   dlog(rop, h, g, p);
   LOG("rop = %s\n", GET_STR(rop));
 
+  mpz_clear(h);
+  mpz_clear(g);
+  mpz_clear(p);
+  
   ErlNifBinary rop_bin;
   if (!export_binary(&rop_bin, rop)) {
     enif_release_binary(&h_bin);
@@ -165,18 +169,16 @@ static ERL_NIF_TERM _generate_safe_prime(ErlNifEnv* env, int argc,
 
   LOG("rop = %s\n", GET_STR(rop));
 
+  mpz_clear(p);
+  mpz_clear(q);
+  mpz_clear(size);  
+
   ErlNifBinary rop_bin;
   if (!export_binary(&rop_bin, rop)) {
-    mpz_clear(p);
-    mpz_clear(q);
-    mpz_clear(size);
     mpz_clear(rop);
     CLOSE_LOG;
     return enif_make_badarg(env);
   } else {
-    mpz_clear(p);
-    mpz_clear(q);
-    mpz_clear(size);
     mpz_clear(rop);
     CLOSE_LOG;
     return enif_make_binary(env, &rop_bin);
@@ -219,10 +221,13 @@ static ERL_NIF_TERM _mpz_gcd(ErlNifEnv* env, int argc,
   mpz_gcd(rop, op1, op2);
   LOG("rop = %s\n", GET_STR(rop));
 
+  mpz_clear(op1);
+  mpz_clear(op2);
+  
   ErlNifBinary rop_bin;
   if (!export_binary(&rop_bin, rop)) {
     enif_release_binary(&op1_bin);
-    enif_release_binary(&op2_bin);
+    enif_release_binary(&op2_bin);    
     mpz_clear(rop);
     CLOSE_LOG;
     return enif_make_badarg(env);
@@ -270,6 +275,9 @@ static ERL_NIF_TERM _mpz_invert(ErlNifEnv* env, int argc,
   mpz_init(rop);
   mpz_invert(rop, op1, op2);
   LOG("rop = %s\n", GET_STR(rop));
+
+  mpz_clear(op1);
+  mpz_clear(op2);
 
   ErlNifBinary rop_bin;
   if (!export_binary(&rop_bin, rop)) {
@@ -322,6 +330,9 @@ static ERL_NIF_TERM _mpz_lcm(ErlNifEnv* env, int argc,
   mpz_init(rop);
   mpz_lcm(rop, op1, op2);
   LOG("rop = %s\n", GET_STR(rop));
+
+  mpz_clear(op1);
+  mpz_clear(op2);  
 
   ErlNifBinary rop_bin;
   if (!export_binary(&rop_bin, rop)) {
@@ -386,6 +397,10 @@ static ERL_NIF_TERM _mpz_powm(ErlNifEnv* env, int argc,
   mpz_powm(rop, base, exp, mod);
   LOG("rop = %s\n", GET_STR(rop));
 
+  mpz_clear(base);
+  mpz_clear(exp);
+  mpz_clear(mod);
+
   ErlNifBinary rop_bin;
   if (!export_binary(&rop_bin, rop)) {
     enif_release_binary(&base_bin);
@@ -436,6 +451,8 @@ static ERL_NIF_TERM _mpz_pow_ui(ErlNifEnv* env, int argc,
   mpz_init(rop);
   mpz_pow_ui(rop, base, exp);
   LOG("rop = %s\n", GET_STR(rop));
+
+  mpz_clear(base);
 
   ErlNifBinary rop_bin;
   if (!export_binary(&rop_bin, rop)) {
