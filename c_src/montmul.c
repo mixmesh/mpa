@@ -76,21 +76,19 @@ typedef uint32_t ErlNifHalfBigDigit;
 
 #ifdef BIG_HAVE_DOUBLE_DIGIT
 
-/* ErtsDoubleDigit => ErlNifBigDigit */
 #define DLOW(x)        ((ErlNifBigDigit)(x))
-#define DHIGH(x)       ((ErlNifBigDigit)(((ErtsDoubleDigit)(x)) >> D_EXP))
+#define DHIGH(x)       ((ErlNifBigDigit)(((ErlNifBigDoubleDigit)(x)) >> D_EXP))
 
-/* ErlNifBigDigit => ErtsDoubleDigit */
-#define DLOW2HIGH(x)   (((ErtsDoubleDigit)(x)) << D_EXP)
+#define DLOW2HIGH(x)   (((ErlNifDoubleDigit)(x)) << D_EXP)
 #define DDIGIT(a1,a0)  (DLOW2HIGH(a1) + (a0))
 
 #define DMULc(a,b,c,p) do {			       \
-        ErtsDoubleDigit _t = ((ErtsDoubleDigit)(a))*(b) + (c);	\
+        ErlNifBigDoubleDigit _t = ((ErlNifBigDoubleDigit)(a))*(b) + (c); \
 	p = DLOW(_t);						\
 	c = DHIGH(_t);						\
     } while(0)
 #define DMUL(a,b,c1,c0) do { \
-	ErtsDoubleDigit _t = ((ErtsDoubleDigit)(a))*(b);	\
+	ErlNifBigDoubleDigit _t = ((ErlNifBigDoubleDigit)(a))*(b);	\
 	c0 = DLOW(_t);					\
 	c1 = DHIGH(_t);					\
     } while(0)
@@ -194,8 +192,8 @@ static int big_bits(ErlNifBigDigit* x, int xl)
 void big_print(ErlNifBigDigit* x, int xl)
 {
     int i;
-    printf("{%lu",x[xl-1]);
-    for (i = xl-2; i >= 0; i--) printf(",%lu", x[i]);
+    printf("{%lu",(unsigned long)x[xl-1]);
+    for (i = xl-2; i >= 0; i--) printf(",%lu", (unsigned long)x[i]);
     printf("}\n");
 }
 
