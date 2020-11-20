@@ -172,12 +172,23 @@ static void big_copy(ErlNifBigDigit* dst, ErlNifBigDigit* src, int n)
     memcpy(dst, src, n*sizeof(ErlNifBigDigit));
 }
 
-#if 0
 static void big_zero(ErlNifBigDigit* dst, int n)
 {
     memset(dst, 0, n*sizeof(ErlNifBigDigit));
 }
-#endif
+
+static int big_bits(ErlNifBigDigit* x, int xl)
+{
+    int n = 8*sizeof(ErlNifBigDigit)*(xl-1);
+    ErlNifBigDigit h = x[xl-1];
+    if ((n == 0) && (h == 0))
+	return 1;
+    while(h) {
+	n++;
+	h >>= 1;
+    }
+    return n;
+}
 
 // print hi->lo
 void big_print(ErlNifBigDigit* x, int xl)
@@ -289,6 +300,9 @@ static int big_mul_k(ErlNifBigDigit* x, int xl, ErlNifBigDigit* y, int yl,
 		     ErlNifBigDigit* r, int k)
 {
     int i;
+
+    big_zero(r, k);
+    
     for (i = 0; i < xl; i++) {
 	ErlNifBigDigit cp = 0;
 	ErlNifBigDigit c = 0;
@@ -307,12 +321,13 @@ static int big_mul_k(ErlNifBigDigit* x, int xl, ErlNifBigDigit* y, int yl,
 	return i+1;
 }
 
-// regular multiply
-// multiply x[xl] and y[yl] and return in r[xl+ýl] (return actual size)
 static int big_mul(ErlNifBigDigit* x, int xl, ErlNifBigDigit* y, int yl,
 		   ErlNifBigDigit* r)
 {
     int i;
+
+    big_zero(r, xl+yl);
+    
     for (i = 0; i < xl; i++) {
 	ErlNifBigDigit cp = 0;
 	ErlNifBigDigit c = 0;
@@ -333,6 +348,9 @@ static int big_mul(ErlNifBigDigit* x, int xl, ErlNifBigDigit* y, int yl,
 static int big_sqr(ErlNifBigDigit* x, int xl, ErlNifBigDigit* r)
 {
     int i;
+
+    big_zero(r, xl+xl);
+    
     for (i = 0; i < xl; i++) {
 	ErlNifBigDigit cp = 0;
 	ErlNifBigDigit c = 0;
@@ -350,21 +368,20 @@ static int big_sqr(ErlNifBigDigit* x, int xl, ErlNifBigDigit* r)
 	return i+1;
 }
 
-
 int big_mont_redc(ErlNifBigDigit* t, int tl, ErlNifBigDigit* n, int nl,
-		  ErlNifBigDigit* np, int npl, ErlNifBigDigit* r, int k)
+		  ErlNifBigDigit* np, int npl, ErlNifBigDigit* r)
 {
-    ErlNifBigDigit m[k];
-    int ml, rl;
+    ErlNifBigDigit M[nl];
+    int ml, rl, tk;
 
-    assert(tl <= 2*k);
-    assert(nl <= k);
-    assert(npl <= k);
+    assert(tl <= 2*nl);
+    assert(npl <= nl);
 
-    ml = big_mul_k(t, tl, np, npl, m, k);  // M = T*N (mod 2^k)
-    rl = big_mul(m, ml, n, nl, r);         // R = M*N
+    tk = (tl < nl) ? tl : nl;
+    ml = big_mul_k(t, tk, np, npl, M, nl);  // M = T*N (mod B^k)
+    rl = big_mul(M, ml, n, nl, r);         // R = M*N
     rl = big_add(t, tl, r, rl, r);         // R = T+M*N
-    rl = big_shr(r, rl, k);                // R = R >> k
+    rl = big_shr(r, rl, nl);                // R = R >> k
     if (big_gt(r, rl, n, nl))
 	return big_sub(r, rl, n, nl, r);
     return
@@ -374,47 +391,44 @@ int big_mont_redc(ErlNifBigDigit* t, int tl, ErlNifBigDigit* n, int nl,
 // al,bl < nl < k   R[al+bl]
 int big_mont_mul(ErlNifBigDigit* a, int al, ErlNifBigDigit* b, int bl,
 		 ErlNifBigDigit* n, int nl,
-		 ErlNifBigDigit* np, int npl, ErlNifBigDigit* r, int k)
+		 ErlNifBigDigit* np, int npl, ErlNifBigDigit* r)
 {
-    ErlNifBigDigit T[2*k];  // ~2k
+    ErlNifBigDigit T[2*nl];
     int tl;
-    assert(al <= k);
-    assert(bl <= k);
-    assert(nl <= k);
-    assert(npl <= k);
+    assert(al <= nl);
+    assert(bl <= nl);
+    assert(npl <= nl);
     tl = big_mul(a, al, b, bl, T);
-    return big_mont_redc(T, tl, n, nl, np, npl, r, k);
+    return big_mont_redc(T, tl, n, nl, np, npl, r);
 }
 
 // al < nl < k
 int big_mont_sqr(ErlNifBigDigit* a, int al,
 		 ErlNifBigDigit* n, int nl,
-		 ErlNifBigDigit* np, int npl, ErlNifBigDigit* r, int k)
+		 ErlNifBigDigit* np, int npl, ErlNifBigDigit* r)
 {
-    ErlNifBigDigit t[2*k];
+    ErlNifBigDigit T[2*nl];
     int tl;
-    assert(al <= k);
-    assert(nl <= k);
-    assert(npl <= k);
-    tl = big_sqr(a, al, t);
-    return big_mont_redc(t, tl, n, nl, np, npl, r, k);
+    assert(al <= nl);
+    assert(npl <= nl);
+    tl = big_sqr(a, al, T);
+    return big_mont_redc(T, tl, n, nl, np, npl, r);
 }
 
 // a^e (mod R)  (R=B^k > N)  (B = ErlNifBigDigit base) r[2*al]
 int big_mont_pow(ErlNifBigDigit* a, int al, ErlNifBigDigit* e, int el,
 		 ErlNifBigDigit* n, int nl,
-		 ErlNifBigDigit* np, int npl, ErlNifBigDigit* r, int k)
+		 ErlNifBigDigit* np, int npl, ErlNifBigDigit* r)
 {
-    ErlNifBigDigit P[2][2*k];
-    ErlNifBigDigit A[2][2*k];
+    ErlNifBigDigit P[2][2*nl];
+    ErlNifBigDigit A[2][2*nl];
     int u, v;
     int s, t;
     int pl;
     int pos, nbits;
 
-    assert(al <= k);
-    assert(nl <= k);
-    assert(npl <= k);
+    assert(al <= nl);
+    assert(npl <= nl);
     
     u = 0; v = u^1;
     pl = big_small(P[u], 1);  // P = 1
@@ -422,19 +436,19 @@ int big_mont_pow(ErlNifBigDigit* a, int al, ErlNifBigDigit* e, int el,
     s = 0; t = s^1;
     big_copy(A[s], a, al);  // check al!
 
-    nbits = el*sizeof(ErlNifBigDigit)*8-1;
+    nbits = big_bits(e, el);
     for (pos = 0; pos < nbits; pos++) {
 	if (big_bit_test(e, el, pos)) {
 	    // P' = A*P (mod R)
-	    pl = big_mont_mul(A[s], al, P[u], pl, n, nl, np, npl, P[v], k);
+	    pl = big_mont_mul(A[s], al, P[u], pl, n, nl, np, npl, P[v]);
 	    u = v; v = u^1;
 	}
 	// A' = A^2 (mod R)
-	al = big_mont_sqr(A[s], al, n, nl, np, npl, A[t], k);
+	al = big_mont_sqr(A[s], al, n, nl, np, npl, A[t]);
 	s = t; t = s^1;
     }
     // r = A*P (mod R)
-    return big_mont_mul(A[s], al, P[u], pl, n, nl, np, npl, r, k);
+    return big_mont_mul(A[s], al, P[u], pl, n, nl, np, npl, r);
 }
 
 #ifdef TEST

@@ -8,6 +8,7 @@
          pow_ui/2,
          probab_prime_p/2]).
 -export([big_powm/3]).
+-export([big_size/1, big_bits/1]).
 -export([big_mont_redc/3, big_mont_redc/2]).
 -export([big_mont_mul/4, big_mont_mul/3]).
 -export([big_mont_sqr/3, big_mont_sqr/2]).
@@ -16,8 +17,9 @@
 -export([to_mont/2, from_mont/2]).
 -export([to_mont/3, from_mont/3]).
 %% test
--export([isize/1]).
--export([test1/0]).
+-export([test1/0, test2/0, test3/0]).
+-export([test11/0, test12/0, test13/0]).
+-export([mont_pow/3]).
 
 %% Exported: dlog
 
@@ -64,6 +66,8 @@ powm(Base, Exp, Mod) ->
 big_powm(Base, Exp, Mod) ->
     gmp_nif:big_powm(Base, Exp, Mod).
 
+big_size(X) -> gmp_nif:big_size(X).
+big_bits(X) -> gmp_nif:big_bits(X).
 
 big_mont_redc(T, {_K,N,Np,_Ri}) ->
     big_mont_redc(T, N, Np).
@@ -99,7 +103,7 @@ probab_prime_p(N, Reps) ->
 %% calculate mongomery paramters Ri,Np
 mont(N) when is_integer(N), N>0, N band 1 =:= 1 ->
     W = 8*erlang:system_info(wordsize),
-    K = ((isize(N) + (W-1)) div W)*W,
+    K = big_size(N)*W,
     R = (1 bsl K),
     {1,{S,T}} = egcd(R, N),
     Ri = mod(S, N),
@@ -119,31 +123,6 @@ redc(T, {K,N,Np,_Ri}) ->
     V = (T + M*N) bsr K,
     if V > N -> V - N;
        true -> V
-    end.
-
-isize(X) -> 
-    isize_(X).
-
-isize_(0) -> 1;
-isize_(X) when is_integer(X), X > 0 ->
-    isize32_(X,0).
-
-isize32_(X, I) ->
-    if X > 16#FFFFFFFF -> isize32_(X bsr 32, I+32);
-       true -> isize8_(X, I)
-    end.
-
-isize8_(X, I) ->
-    if X > 16#FF -> isize8_(X bsr 8, I+8);
-       X >= 2#10000000 -> I+8;
-       X >= 2#1000000 -> I+7;
-       X >= 2#100000 -> I+6;
-       X >= 2#10000 -> I+5;
-       X >= 2#1000 -> I+4;
-       X >= 2#100 -> I+3;
-       X >= 2#10 -> I+2;
-       X >= 2#1 -> I+1;
-       true -> I
     end.
 
 mod(A,N) when A>0, N>0, A < N -> A;
@@ -179,4 +158,80 @@ test1() ->
     Rm = mpz:redc(Am*Bm, M),
     C = mpz:from_mont(Rm, M),
     C = (A*B) rem P,
+    C = 82,
     ok.
+
+test2() ->
+    P = 101,
+    M = mont(P),
+    A = 79,
+    Am = to_mont(A, M),
+    B = 33,
+    Bm = to_mont(B, M),
+    Rm = big_mont_redc(Am*Bm, M),
+    C = mpz:from_mont(Rm, M),
+    C = (A*B) rem P,
+    C = 82,
+    ok.    
+
+test3() ->
+    P = 101,
+    M = mont(P),
+    A = 79,
+    Am = to_mont(A, M),
+    B = 33,
+    Bm = to_mont(B, M),
+    Rm = big_mont_mul(Am, Bm, M),
+    C = mpz:from_mont(Rm, M),
+    C = (A*B) rem P,
+    C = 82,
+    ok.    
+
+
+test11() ->
+    P = 1262773213764120865151395821008507246189,
+    M = mont(P),
+    A = 2209866513432185383910552416615,
+    Am = to_mont(A, M),
+    B = 1491922486076647757424410593223,
+    Bm = to_mont(B, M),
+    Rm = mpz:redc(Am*Bm, M),
+    C = mpz:from_mont(Rm, M),
+    C = (A*B) rem P,
+    C = 3060820620989551345058379044987056313,
+    ok.
+
+test12() ->
+    P = 1262773213764120865151395821008507246189,
+    M = mont(P),
+    A = 2209866513432185383910552416615,
+    Am = to_mont(A, M),
+    B = 1491922486076647757424410593223,
+    Bm = to_mont(B, M),
+    Rm = big_mont_redc(Am*Bm, M),
+    C = mpz:from_mont(Rm, M),
+    C = (A*B) rem P,
+    C = 3060820620989551345058379044987056313,
+    ok.    
+
+test13() ->
+    P = 1262773213764120865151395821008507246189,
+    M = mont(P),
+    A = 2209866513432185383910552416615,
+    Am = to_mont(A, M),
+    B = 1491922486076647757424410593223,
+    Bm = to_mont(B, M),
+    Rm = big_mont_mul(Am, Bm, M),
+    C = mpz:from_mont(Rm, M),
+    C = (A*B) rem P,
+    C = 3060820620989551345058379044987056313,
+    ok.    
+
+mont_pow(A, B, N) ->
+    M = mont(N),
+    Am = to_mont(A, M),
+    Rm = big_mont_pow(Am, B, M),
+    mpz:from_mont(Rm, M).
+
+    
+    
