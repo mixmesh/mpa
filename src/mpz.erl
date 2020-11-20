@@ -12,9 +12,12 @@
 -export([big_mont_mul/4, big_mont_mul/3]).
 -export([big_mont_sqr/3, big_mont_sqr/2]).
 -export([big_mont_pow/4, big_mont_pow/3]).
--export([mont/1]).
+-export([mont/1, redc/2]).
 -export([to_mont/2, from_mont/2]).
 -export([to_mont/3, from_mont/3]).
+%% test
+-export([isize/1]).
+-export([test1/0]).
 
 %% Exported: dlog
 
@@ -96,7 +99,7 @@ probab_prime_p(N, Reps) ->
 %% calculate mongomery paramters Ri,Np
 mont(N) when is_integer(N), N>0, N band 1 =:= 1 ->
     W = 8*erlang:system_info(wordsize),
-    K = (((imath:ilog2(N)+1) + (W-1)) div W)*W,
+    K = ((isize(N) + (W-1)) div W)*W,
     R = (1 bsl K),
     {1,{S,T}} = egcd(R, N),
     Ri = mod(S, N),
@@ -108,6 +111,40 @@ to_mont(X, K, N) -> (X bsl K) rem N.
 
 from_mont(Y, {_K,N,_Np,Ri}) -> from_mont(Y,Ri,N).
 from_mont(Y,Ri,N) -> (Y*Ri) rem N.
+
+%%  Montgomery reduction
+redc(T, {K,N,Np,_Ri}) ->
+    R1 = ((1 bsl K)-1),
+    M = ((T band R1)*Np) band R1,
+    V = (T + M*N) bsr K,
+    if V > N -> V - N;
+       true -> V
+    end.
+
+isize(X) -> 
+    isize_(X).
+
+isize_(0) -> 1;
+isize_(X) when is_integer(X), X > 0 ->
+    isize32_(X,0).
+
+isize32_(X, I) ->
+    if X > 16#FFFFFFFF -> isize32_(X bsr 32, I+32);
+       true -> isize8_(X, I)
+    end.
+
+isize8_(X, I) ->
+    if X > 16#FF -> isize8_(X bsr 8, I+8);
+       X >= 2#10000000 -> I+8;
+       X >= 2#1000000 -> I+7;
+       X >= 2#100000 -> I+6;
+       X >= 2#10000 -> I+5;
+       X >= 2#1000 -> I+4;
+       X >= 2#100 -> I+3;
+       X >= 2#10 -> I+2;
+       X >= 2#1 -> I+1;
+       true -> I
+    end.
 
 mod(A,N) when A>0, N>0, A < N -> A;
 mod(A,N) ->
@@ -129,3 +166,17 @@ egcd_(0,Q,_,_,Q1,Q2) -> {Q, {Q2,Q1}};
 egcd_(R,Q,R1,R2,Q1,Q2) ->
     D = Q div R,
     egcd_(Q rem R, R, Q1-D*R1, Q2-D*R2, R1, R2).
+
+%% montgomery test
+
+test1() ->
+    P = 101,
+    M = mont(P),
+    A = 79,
+    Am = to_mont(A, M),
+    B = 33,
+    Bm = to_mont(B, M),
+    Rm = mpz:redc(Am*Bm, M),
+    C = mpz:from_mont(Rm, M),
+    C = (A*B) rem P,
+    ok.
