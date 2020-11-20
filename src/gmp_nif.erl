@@ -2,6 +2,10 @@
 -export([dlog/3, generate_safe_prime/1, mpz_gcd/2, mpz_invert/2, mpz_lcm/2,
          mpz_powm/3, mpz_pow_ui/2, mpz_probab_prime_p/2]).
 -export([big_powm/3]).
+-export([big_mont_redc/3]).
+-export([big_mont_mul/4]).
+-export([big_mont_sqr/3]).
+-export([big_mont_pow/4]).
 -on_load(init/0).
 
 %% Exported: init
@@ -51,3 +55,17 @@ mpz_probab_prime_p(_N, _Reps) ->
 
 big_powm(_Base, _Exp, _Mod) ->
     exit(nif_library_not_loaded).
+
+big_mont_redc(_T, _N, _Np) ->
+    exit(nif_library_not_loaded).
+
+big_mont_mul(_A, _B, _N, _Np) ->
+    exit(nif_library_not_loaded).
+
+big_mont_sqr(_A, _N, _Np) ->
+    exit(nif_library_not_loaded).
+
+big_mont_pow(_A, _E, _N, _Np) ->
+    exit(nif_library_not_loaded).
+
+

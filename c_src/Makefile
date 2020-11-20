@@ -5,10 +5,10 @@ OS=$(shell uname -s)
 CFLAGS=-I$(ERL_TOP)/usr/include
 #@END-C_SRC-DEFAULT-RULES@
 
-CFLAGS+=-finline-functions -std=c99 -Wall -Werror -O # -DDEBUG
+CFLAGS+=-finline-functions -std=c99 -Wall -Werror -O3 # -DDEBUG
 LDFLAGS+=-shared
 
-OBJS = gmp_nif.o dloglib.o erl_nif_big.o
+OBJS = gmp_nif.o dloglib.o erl_nif_big.o montmul.o
 
 all: ../priv/gmp_nif.so
 
