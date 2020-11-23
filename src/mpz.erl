@@ -12,14 +12,17 @@
 -export([big_mont_redc/3, big_mont_redc/2]).
 -export([big_mont_mul/4, big_mont_mul/3]).
 -export([big_mont_sqr/3, big_mont_sqr/2]).
--export([big_mont_pow/4, big_mont_pow/3]).
+-export([big_mont_pow/5, big_mont_pow/3]).
 -export([mont/1, redc/2]).
 -export([to_mont/2, from_mont/2]).
 -export([to_mont/3, from_mont/3]).
 %% test
--export([test1/0, test2/0, test3/0]).
--export([test11/0, test12/0, test13/0]).
--export([mont_pow/3]).
+-export([test1/0, test2/0, test3/0, test4/0]).
+-export([test11/0, test12/0, test13/0, test14/0]).
+-export([test21/0, test22/0, test23/0, test24/0, test25/0]).
+-export([mont_pow/3, mont_mul/3, mont_sqr/2]).
+-export([test_sqr_random/2, test_mul_random/2, test_pow_random/2]).
+
 
 %% Exported: dlog
 
@@ -69,25 +72,25 @@ big_powm(Base, Exp, Mod) ->
 big_size(X) -> gmp_nif:big_size(X).
 big_bits(X) -> gmp_nif:big_bits(X).
 
-big_mont_redc(T, {_K,N,Np,_Ri}) ->
+big_mont_redc(T, {_K,_M1,N,Np,_Ri}) ->
     big_mont_redc(T, N, Np).
 big_mont_redc(T, N, Np) ->
     gmp_nif:big_mont_redc(T, N, Np).
 
-big_mont_mul(A, B, {_K,N,Np,_Ri}) ->
+big_mont_mul(A, B, {_K,_M1,N,Np,_Ri}) ->
     big_mont_mul(A, B, N, Np).
 big_mont_mul(A, B, N, Np) ->
     gmp_nif:big_mont_mul(A, B, N, Np).
 
-big_mont_sqr(A, {_K,N,Np,_Ri}) ->
+big_mont_sqr(A, {_K,_M1,N,Np,_Ri}) ->
     big_mont_sqr(A, N, Np).
 big_mont_sqr(A, N, Np) ->
     gmp_nif:big_mont_sqr(A, N, Np).
 
-big_mont_pow(A, E, {_K,N,Np,_Ri}) ->
-    big_mont_pow(A, E, N, Np).
-big_mont_pow(A, E, N, Np) ->
-    gmp_nif:big_mont_pow(A, E, N, Np).
+big_mont_pow(A, E, {_K,M1,N,Np,_Ri}) ->
+    big_mont_pow(A, E, M1, N, Np).
+big_mont_pow(A, E, P1, N, Np) ->
+    gmp_nif:big_mont_pow(A, E, P1, N, Np).
 
 %% Exported: pow_ui
 
@@ -108,16 +111,17 @@ mont(N) when is_integer(N), N>0, N band 1 =:= 1 ->
     {1,{S,T}} = egcd(R, N),
     Ri = mod(S, N),
     Np = mod(-T, R),
-    {K,N,Np,Ri}.
+    M1 = (1 bsl K) rem N,
+    {K,M1,N,Np,Ri}.
 
-to_mont(X, {K,N,_Np,_Ri}) -> to_mont(X, K, N).
+to_mont(X, {K,_M1,N,_Np,_Ri}) -> to_mont(X, K, N).
 to_mont(X, K, N) -> (X bsl K) rem N.
 
-from_mont(Y, {_K,N,_Np,Ri}) -> from_mont(Y,Ri,N).
+from_mont(Y, {_K,_M1,N,_Np,Ri}) -> from_mont(Y,Ri,N).
 from_mont(Y,Ri,N) -> (Y*Ri) rem N.
 
 %%  Montgomery reduction
-redc(T, {K,N,Np,_Ri}) ->
+redc(T, {K,_M1,N,Np,_Ri}) ->
     R1 = ((1 bsl K)-1),
     M = ((T band R1)*Np) band R1,
     V = (T + M*N) bsr K,
@@ -156,7 +160,7 @@ test1() ->
     B = 33,
     Bm = to_mont(B, M),
     Rm = mpz:redc(Am*Bm, M),
-    C = mpz:from_mont(Rm, M),
+    C = from_mont(Rm, M),
     C = (A*B) rem P,
     C = 82,
     ok.
@@ -169,7 +173,7 @@ test2() ->
     B = 33,
     Bm = to_mont(B, M),
     Rm = big_mont_redc(Am*Bm, M),
-    C = mpz:from_mont(Rm, M),
+    C = from_mont(Rm, M),
     C = (A*B) rem P,
     C = 82,
     ok.    
@@ -182,11 +186,21 @@ test3() ->
     B = 33,
     Bm = to_mont(B, M),
     Rm = big_mont_mul(Am, Bm, M),
-    C = mpz:from_mont(Rm, M),
+    C = from_mont(Rm, M),
     C = (A*B) rem P,
     C = 82,
     ok.    
 
+test4() ->
+    P = 101,
+    M = mont(P),
+    A = 79,
+    Am = to_mont(A, M),
+    Rm = big_mont_sqr(Am, M),
+    C = from_mont(Rm, M),
+    C = (A*A) rem P,
+    C = 80,
+    ok.    
 
 test11() ->
     P = 1262773213764120865151395821008507246189,
@@ -196,7 +210,7 @@ test11() ->
     B = 1491922486076647757424410593223,
     Bm = to_mont(B, M),
     Rm = mpz:redc(Am*Bm, M),
-    C = mpz:from_mont(Rm, M),
+    C = from_mont(Rm, M),
     C = (A*B) rem P,
     C = 3060820620989551345058379044987056313,
     ok.
@@ -209,9 +223,8 @@ test12() ->
     B = 1491922486076647757424410593223,
     Bm = to_mont(B, M),
     Rm = big_mont_redc(Am*Bm, M),
-    C = mpz:from_mont(Rm, M),
+    C = from_mont(Rm, M),
     C = (A*B) rem P,
-    C = 3060820620989551345058379044987056313,
     ok.    
 
 test13() ->
@@ -222,16 +235,152 @@ test13() ->
     B = 1491922486076647757424410593223,
     Bm = to_mont(B, M),
     Rm = big_mont_mul(Am, Bm, M),
-    C = mpz:from_mont(Rm, M),
+    C = from_mont(Rm, M),
     C = (A*B) rem P,
-    C = 3060820620989551345058379044987056313,
     ok.    
+
+test14() ->
+    P = 1262773213764120865151395821008507246189,
+    M = mont(P),
+    A = 2209866513432185383910552416615,
+    Am = to_mont(A, M),
+    Rm = big_mont_sqr(Am, M),
+    C = from_mont(Rm, M),
+    C = (A*A) rem P,
+    ok.    
+
+-define(P, ((1 bsl 1024) - 1093337)).
+-define(G, 7).
+-define(X, ((1 bsl 512) div 5)).
+
+test21() ->
+    M = mont(?P),
+    A = 129015633621243001913449155039089342460245014035423996408293170177875331730667287169606301577788634719390344399495012523585332459829150811854319143390944179836371880331297042928788452376675529244126810320465199234812830335213501532015809681469166815018523250762130729029190848536853958461583303676087231435574,
+    Am = to_mont(A, M),
+    B = 124060833865307543493568060615888984483974452188008593376614358923889775329311551928017371949352869174793233582962966084426368046363097562383329228081040634647665584981130599395343295428306766898340404601804058174196606881036706450931509901449845820591347944486874994264576959961749516461160241513031362543684,
+    Bm = to_mont(B, M),
+    Rm = mpz:redc(Am*Bm, M),
+    C = from_mont(Rm, M),
+    C = (A*B) rem ?P,
+    ok.
+
+test22() ->
+    M = mont(?P),
+    A = 129015633621243001913449155039089342460245014035423996408293170177875331730667287169606301577788634719390344399495012523585332459829150811854319143390944179836371880331297042928788452376675529244126810320465199234812830335213501532015809681469166815018523250762130729029190848536853958461583303676087231435574,
+    Am = to_mont(A, M),
+    B = 124060833865307543493568060615888984483974452188008593376614358923889775329311551928017371949352869174793233582962966084426368046363097562383329228081040634647665584981130599395343295428306766898340404601804058174196606881036706450931509901449845820591347944486874994264576959961749516461160241513031362543684,
+    Bm = to_mont(B, M),
+    Rm = big_mont_redc(Am*Bm, M),
+    C = from_mont(Rm, M),
+    C = (A*B) rem ?P,
+    ok.    
+
+test23() ->
+    M = mont(?P),
+    A = 129015633621243001913449155039089342460245014035423996408293170177875331730667287169606301577788634719390344399495012523585332459829150811854319143390944179836371880331297042928788452376675529244126810320465199234812830335213501532015809681469166815018523250762130729029190848536853958461583303676087231435574,
+    Am = to_mont(A, M),
+    B = 124060833865307543493568060615888984483974452188008593376614358923889775329311551928017371949352869174793233582962966084426368046363097562383329228081040634647665584981130599395343295428306766898340404601804058174196606881036706450931509901449845820591347944486874994264576959961749516461160241513031362543684,
+    Bm = to_mont(B, M),
+    Rm = big_mont_mul(Am, Bm, M),
+    C = from_mont(Rm, M),
+    C = (A*B) rem ?P,
+    ok.    
+
+
+test24() ->
+    M = mont(?P),
+    A = 129015633621243001913449155039089342460245014035423996408293170177875331730667287169606301577788634719390344399495012523585332459829150811854319143390944179836371880331297042928788452376675529244126810320465199234812830335213501532015809681469166815018523250762130729029190848536853958461583303676087231435574,
+    Am = to_mont(A, M),
+    Rm = big_mont_sqr(Am, M),
+    C = from_mont(Rm, M),
+    C = (A*A) rem ?P,
+    ok.
+
+test25() ->
+    M = mont(?P),
+    Gm = to_mont(?G, M),
+    test25_(M, Gm, 2).
+
+test25_(_M, _Gm, X) when X > 1000 -> 
+    ok;
+test25_(M, Gm, X) ->
+    %% io:format("X = ~w\n", [X]),
+    Rm = big_mont_pow(Gm, X, M),
+    C = from_mont(Rm, M),
+    C = imath:pow(?G, X, ?P),
+    test25_(M, Gm, X+1).
+
+
+test_sqr_random(N, Range) -> 
+    rand:seed(exsss, erlang:system_time()),
+    M = mont(?P),
+    test_sqr_random_(N, Range, M).
+
+test_sqr_random_(0, _Range, _M) -> 
+    ok;
+test_sqr_random_(I, Range, M) ->
+    A = random(Range),
+    Am = to_mont(A, M),
+    Rm = big_mont_sqr(Am, M),
+    C = from_mont(Rm, M),
+    C = (A*A) rem ?P,
+    test_sqr_random_(I-1, Range, M).
+
+
+test_mul_random(N, Range) -> 
+    rand:seed(exsss, erlang:system_time()),
+    M = mont(?P),
+    test_mul_random_(N, Range, M).
+
+test_mul_random_(0, _Range, _M) -> 
+    ok;
+test_mul_random_(I, Range, M) ->
+    A = random(Range),
+    Am = to_mont(A, M),
+    B = random(Range),
+    Bm = to_mont(B, M),
+    Rm = big_mont_mul(Am, Bm, M),
+    C = from_mont(Rm, M),
+    C = (A*B) rem ?P,
+    test_mul_random_(I-1, Range, M).
+
+test_pow_random(N, Range) -> 
+    rand:seed(exsss, erlang:system_time()),
+    M = mont(?P),
+    test_pow_random_(N, Range, M).
+
+test_pow_random_(0, _Range, _M) -> 
+    ok;
+test_pow_random_(I, Range, M) ->
+    A = random(Range),
+    Am = to_mont(A, M),
+    X = random(element(1,M)),
+    Rm = big_mont_pow(Am, X, M),
+    C = from_mont(Rm, M),
+    C = imath:pow(A, X, ?P),
+    test_pow_random_(I-1, Range, M).
+
+%%
+mont_mul(A, B, N) ->
+    M = mont(N),
+    Am = to_mont(A, M),
+    Bm = to_mont(B, M),
+    Rm = big_mont_mul(Am, Bm, M),
+    from_mont(Rm, M).
+
+mont_sqr(A, N) ->
+    M = mont(N),
+    Am = to_mont(A, M),
+    Rm = big_mont_sqr(Am, M),
+    from_mont(Rm, M).
 
 mont_pow(A, B, N) ->
     M = mont(N),
     Am = to_mont(A, M),
     Rm = big_mont_pow(Am, B, M),
-    mpz:from_mont(Rm, M).
+    from_mont(Rm, M).
 
-    
-    
+random({Min,Max}) ->
+    Min + rand:uniform((Max-Min)+1) - 1;
+random(Max) ->
+    rand:uniform(Max).

@@ -7,7 +7,7 @@
 -export([big_mont_redc/3]).
 -export([big_mont_mul/4]).
 -export([big_mont_sqr/3]).
--export([big_mont_pow/4]).
+-export([big_mont_pow/5]).
 -on_load(init/0).
 
 %% Exported: init
@@ -73,7 +73,7 @@ big_mont_mul(_A, _B, _N, _Np) ->
 big_mont_sqr(_A, _N, _Np) ->
     exit(nif_library_not_loaded).
 
-big_mont_pow(_A, _E, _N, _Np) ->
+big_mont_pow(_A, _E, _P, _N, _Np) ->
     exit(nif_library_not_loaded).
 
 

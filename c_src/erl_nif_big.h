@@ -16,6 +16,8 @@ typedef struct
     ErlNifBigDigit  ds[NUM_TMP_DIGITS];
 } ErlNifBignum;
 
+#define BIGNUM_SIZE(arr)  (sizeof((arr))/sizeof(ErlNifBigDigit))
+
 extern int enif_is_big(ErlNifEnv* env, ERL_NIF_TERM big_term);
 extern int enif_inspect_big(ErlNifEnv* env,ERL_NIF_TERM big_term,ErlNifBignum* big);
 extern ERL_NIF_TERM enif_make_number(ErlNifEnv* env, ErlNifBignum* big);
