@@ -150,6 +150,24 @@ egcd_(R,Q,R1,R2,Q1,Q2) ->
     D = Q div R,
     egcd_(Q rem R, R, Q1-D*R1, Q2-D*R2, R1, R2).
 
+
+ipowm(A, B, M) ->
+    ipowm_(A rem M, B, M, 1).
+
+ipowm_(A, 1, M, P) ->
+     (A*P) rem M;
+ipowm_(A, B, M, P)  ->
+    B1 = B bsr 1,
+    A1 = sqr(A) rem M,
+    if B - B1 =:= B1 ->
+ 	    ipowm_(A1, B1, M, P);
+       true ->
+ 	    ipowm_(A1, B1, M, (A*P) rem M)
+    end.
+
+sqr(A) when is_integer(A) ->
+    A*A.
+
 %% montgomery test
 
 test1() ->
@@ -307,7 +325,7 @@ test25_(M, Gm, X) ->
     %% io:format("X = ~w\n", [X]),
     Rm = big_mont_pow(Gm, X, M),
     C = from_mont(Rm, M),
-    C = imath:pow(?G, X, ?P),
+    C = ipowm(?G, X, ?P),
     test25_(M, Gm, X+1).
 
 
@@ -357,7 +375,7 @@ test_pow_random_(I, Range, M) ->
     X = random(element(1,M)),
     Rm = big_mont_pow(Am, X, M),
     C = from_mont(Rm, M),
-    C = imath:pow(A, X, ?P),
+    C = ipowm(A, X, ?P),
     test_pow_random_(I-1, Range, M).
 
 %%
