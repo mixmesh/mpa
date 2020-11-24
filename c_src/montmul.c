@@ -340,35 +340,26 @@ static int inline big_sqr(ErlNifBigDigit* x, int xl,
 	si = ri;
 	
 	d = x[i++];
-	// z1 = digit_mul(d, d, &b0);
 	DMUL(d, d, z1, b0);
 	assert(si < szr);
-	// r[si] = digit_add_c(r[si], b0, &y_3);
 	DSUMc(r[si],b0,y_3,r[si]);
 	si++;
 
 	ij = i;
 	while(m--) {
 	    assert(ij < xl);
-	    // b1 = digit_mul(d, x[ij], &b0);
 	    DMUL(d, x[ij], b1, b0);
 	    ij++;
-	    // z0 = digit_add_c(b0,   b0, &y_0);
 	    DSUMc(b0, b0, y_0, z0);
-	    // z2 = digit_add_c(z0,   z1, &y_2);
 	    DSUMc(z0, z1, y_2, z2);
 	    assert(si < szr);
-	    // r[si] = digit_add_c(r[si],z2, &y_3);
 	    DSUMc(r[si],z2,y_3,r[si]);
 	    si++;
-	    // z1 = digit_add_c(b1, b1, &y_1);
 	    DSUMc(b1, b1, y_1, z1);
 	}
 	z0 = y_0;
-	// z2 = digit_add_c(z0, z1, &y_2);
 	DSUMc(z0, z1, y_2, z2);
 	assert(si < szr);
-	// r[si] = digit_add_c(r[si], z2, &y_3);
 	DSUMc(r[si], z2, y_3, r[si]);
 	if (n != 0) {
 	    si++;
@@ -415,7 +406,7 @@ int big_mont_redc_default(ErlNifBigDigit* T, int tl,
 // note that T is destructivly updated
 int big_mont_redc_sos(ErlNifBigDigit* t, int tl,
 		      ErlNifBigDigit* n, int s,
-		      ErlNifBigDigit* Mp, int Mpl,
+		      ErlNifBigDigit* np, int npl,
 		      ErlNifBigDigit* Z, int szZ)
 {
     int i, j;
@@ -425,7 +416,7 @@ int big_mont_redc_sos(ErlNifBigDigit* t, int tl,
     for (i = 0; i < s; i++) {
 	ErlNifBigDigit u = 0;
 	ErlNifBigDigit v;
-	ErlNifBigDigit m = t[i]*Mp[0];
+	ErlNifBigDigit m = t[i]*np[0];
 
 	for (j = 0; j < s; j++) {
 	    ErlNifBigDigit u0 = 0;
@@ -448,9 +439,9 @@ int big_mont_redc_sos(ErlNifBigDigit* t, int tl,
     return Zl;
 }
 
-int big_mont_redc_fips(ErlNifBigDigit* T, int tl,
-		       ErlNifBigDigit* M, int Ml,
-		       ErlNifBigDigit* Mp, int Mpl,
+int big_mont_redc_fips(ErlNifBigDigit* t, int tl,
+		       ErlNifBigDigit* n, int s,
+		       ErlNifBigDigit* np, int npl,
 		       ErlNifBigDigit* Z, int szZ)
 {
     return -1;
