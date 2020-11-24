@@ -1,6 +1,7 @@
 #ifndef __ERL_NIF_BIG_H__
 #define __ERL_NIF_BIG_H__
 
+#include <stdint.h>
 #include "erl_nif.h"
 
 typedef ERL_NIF_TERM ErlNifBigDigit;
@@ -14,11 +15,11 @@ typedef uint16_t   ErlNifHalfBigDigit;
 #elif (__SIZEOF_POINTER__ == 4)
 /* Assume 32-bit machine with no long support */
 #undef  BIG_HAVE_DOUBLE_DIGIT
-typedef uint32_t   ErlNifBigDigit;
+// typedef uint32_t   ErlNifBigDigit;
 typedef uint16_t  ErlNifHalfBigDigit;
 
 #elif (__SIZEOF_POINTER__ == 8)
-typedef uint64_t ErlNifBigDigit;
+// typedef uint64_t ErlNifBigDigit;
 typedef uint32_t ErlNifHalfBigDigit;
 /* Assume 64-bit machine, does it exist 128 bit long long long ? */
 #ifdef __SIZEOF_INT128__
