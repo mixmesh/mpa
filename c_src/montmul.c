@@ -8,34 +8,8 @@
 #define NDEBUG
 #include <assert.h>
 
-#if (__SIZEOF_POINTER__ == 4) && defined(__SIZEOF_LONG_LONG__) && (__SIZEOF_LONG_LONG__ == 8)
-/* Assume 32-bit machine with long long support */
-typedef uint64_t   ErlNifBigDoubleDigit;
-typedef uint32_t   ErlNifBigDigit;
-typedef uint16_t   ErlNifHalfBigDigit;
-#define BIG_HAVE_DOUBLE_DIGIT 1
+#include "montmul.h"
 
-#elif (__SIZEOF_POINTER__ == 4)
-/* Assume 32-bit machine with no long support */
-#undef  BIG_HAVE_DOUBLE_DIGIT
-typedef uint32_t   ErlNifBigDigit;
-typedef uint16_t  ErlNifHalfBigDigit;
-
-#elif (__SIZEOF_POINTER__ == 8)
-typedef uint64_t ErlNifBigDigit;
-typedef uint32_t ErlNifHalfBigDigit;
-/* Assume 64-bit machine, does it exist 128 bit long long long ? */
-#ifdef __SIZEOF_FLOAT128__
-typedef __uint128_t  ErlNifBigDoubleDigit;
-#define BIG_HAVE_DOUBLE_DIGIT 1
-#else
-#undef  BIG_HAVE_DOUBLE_DIGIT
-#endif
-#else
-#error "cannot determine machine size"
-#endif
-
-#define BIGNUM_SIZE(arr)  (sizeof((arr))/sizeof(ErlNifBigDigit))
 
 #define MIN(a,b) (((a)<(b)) ? (a) : (b))
 #define MAX(a,b) (((a)>(b)) ? (a) : (b))
@@ -143,46 +117,6 @@ typedef __uint128_t  ErlNifBigDoubleDigit;
 #define D_EXP (__SIZEOF_POINTER__*8)
 #define D_MASK ((ErlNifBigDigit)(-1))      /* D_BASE-1 */
 
-#if 0
-static inline ErlNifBigDigit digit_mul_c(ErlNifBigDigit a, ErlNifBigDigit b,
-					 ErlNifBigDigit* carry)
-{
-    ErlNifBigDigit c = *carry;
-    ErlNifBigDigit p;
-    DMULc(a,b,c,p);
-    *carry = c;
-    return p;
-}
-
-static inline ErlNifBigDigit digit_mul(ErlNifBigDigit a, ErlNifBigDigit b,
-				       ErlNifBigDigit* r0)
-{
-    ErlNifBigDigit c1,c0;
-    DMUL(a,b,c1,c0);
-    *r0 = c0;
-    return c1;
-}
-
-static inline ErlNifBigDigit digit_add_c(ErlNifBigDigit a, ErlNifBigDigit b,
-					 ErlNifBigDigit* ci)
-{
-    ErlNifBigDigit c = *ci;
-    ErlNifBigDigit s;
-    DSUMc(a,b,c,s);
-    *ci = c;
-    return s;
-}
-
-static inline ErlNifBigDigit digit_sub_b(ErlNifBigDigit a, ErlNifBigDigit b,
-					 ErlNifBigDigit* bi)
-{
-    ErlNifBigDigit r = *bi;
-    ErlNifBigDigit d;
-    DSUBb(a,b,r,d);
-    *bi = r;
-    return d;
-}
-#endif
 
 // print hi->lo
 void big_print(ErlNifBigDigit* x, int xl)
@@ -333,8 +267,6 @@ static int inline big_mul_k(ErlNifBigDigit* x, int xl,
 {
     int i;
 
-    big_zero(r, k);
-    
     for (i = 0; i < xl; i++) {
 	ErlNifBigDigit cp = 0;
 	ErlNifBigDigit c = 0;
@@ -363,7 +295,6 @@ static int inline big_mul(ErlNifBigDigit* x, int xl,
     int i;
 
     assert(xl+yl <= szr);
-    big_zero(r, xl);
     
     for (i = 0; i < xl; i++) {
 	ErlNifBigDigit cp = 0;
@@ -396,7 +327,6 @@ static int inline big_sqr(ErlNifBigDigit* x, int xl,
     int ri, si;
 
     assert(xl+xl <= szr);
-    big_zero(r, xl+1);
 
     ri = si = i = 0;
     n = xl;
@@ -458,8 +388,10 @@ static int inline big_sqr(ErlNifBigDigit* x, int xl,
 }
 
 // r must be of size 2nl
-int big_mont_redc(ErlNifBigDigit* t, int tl, ErlNifBigDigit* n, int nl,
-		  ErlNifBigDigit* np, int npl, ErlNifBigDigit* r, int szr)
+int big_mont_redc_default(ErlNifBigDigit* T, int tl,
+			  ErlNifBigDigit* n, int nl,
+			  ErlNifBigDigit* np, int npl,
+			  ErlNifBigDigit* r, int szr)
 {
     ErlNifBigDigit M[nl];
     int ml, rl, tk;
@@ -468,9 +400,11 @@ int big_mont_redc(ErlNifBigDigit* t, int tl, ErlNifBigDigit* n, int nl,
     assert(npl <= nl);
 
     tk = (tl < nl) ? tl : nl;
-    ml = big_mul_k(t, tk, np, npl, M, nl); // M = T*N (mod B^k)
+    big_zero(M, nl);
+    ml = big_mul_k(T, tk, np, npl, M, nl); // M = T*N (mod B^k)
+    big_zero(r, ml);
     rl = big_mul(M, ml, n, nl, r, szr);    // R = M*N
-    rl = big_add(t, tl, r, rl, r, szr);    // R = T+M*N
+    rl = big_add(T, tl, r, rl, r, szr);    // R = T+M*N
     rl = big_shr(r, rl, nl);               // R = R >> k
     if (big_gt(r, rl, n, nl)) // R>N?
 	return big_sub(r, rl, n, nl, r, szr);   // R = R - N
@@ -478,63 +412,99 @@ int big_mont_redc(ErlNifBigDigit* t, int tl, ErlNifBigDigit* n, int nl,
 	rl;
 }
 
-#if NOT_YET
-int big_mont_redc(ErlNifBigDigit* t, int tl, ErlNifBigDigit* n, int nl,
+// note that T is destructivly updated
+int big_mont_redc_sos(ErlNifBigDigit* t, int tl,
+		      ErlNifBigDigit* n, int s,
+		      ErlNifBigDigit* Mp, int Mpl,
+		      ErlNifBigDigit* Z, int szZ)
+{
+    int i, j;
+    int Zl;
+    ErlNifBigDigit C = 0;
+    
+    for (i = 0; i < s; i++) {
+	ErlNifBigDigit u = 0;
+	ErlNifBigDigit v;
+	ErlNifBigDigit m = t[i]*Mp[0];
+
+	for (j = 0; j < s; j++) {
+	    ErlNifBigDigit u0 = 0;
+	    DMULc(n[j],m,u,v);              // (u,v) = m*n[j] + u
+	    DSUMc(v, t[i+j], u0, t[i+j]);   // (u,v) += t[i+j]
+	    u += u0;
+	}
+	// (u,v) = t[i+s] + u + C;
+	DSUMc(t[i+s],C,u,t[i+s]);
+	C = u;
+    }
+    for (j = 0; j < s; j++)
+	Z[j] = t[j+s];
+    Z[s] = C;
+    i = s;
+    while(i && (Z[i]==0)) i--;
+    Zl = i+1;
+    if (big_gt(Z, Zl, n, s)) // R>N?
+	return big_sub(Z, Zl, n, s, Z, Zl);   // R = R - N
+    return Zl;
+}
+
+int big_mont_redc_fips(ErlNifBigDigit* T, int tl,
+		       ErlNifBigDigit* M, int Ml,
+		       ErlNifBigDigit* Mp, int Mpl,
+		       ErlNifBigDigit* Z, int szZ)
+{
+    return -1;
+}
+
+int big_mont_redc(redc_type_t redc_type,
+		  ErlNifBigDigit* t, int tl, ErlNifBigDigit* n, int nl,
 		  ErlNifBigDigit* np, int npl, ErlNifBigDigit* r, int szr)
 {
-    int i;
-    ErlNifBigDigit c = 0;
-    
-    for (i = 0; i < nl; i++) {
-	ErlNifBigDigit u = 0;
-	ErlNifBigDigit q = t[i]*np0;
-	int j;
-	for (j = 0; j < nl; j++) {
-	    (u,v) = n[j]*q + t[i+j] + u;
-	    t[i+j] = v;
-	}
-	(u,v) = t[i+nl] + u + c;
-	t[i+nl] = v;
-	c = u;
+    switch(redc_type) {
+    case REDC_DEFAULT:
+	return big_mont_redc_default(t, tl, n, nl, np, npl, r, szr);
+    case REDC_SOS:
+	return big_mont_redc_sos(t, tl, n, nl, np, npl, r, szr);
+    case REDC_FIPS:
+	return big_mont_redc_fips(t, tl, n, nl, np, npl, r, szr);
+    default:
+	return -1;
     }
-    for (j = 0; j < nl; j++)
-	r[j] = t[j+nl];
-    r[nl] = t;
-    rl = nl;
-    if (big_gt(r, rl, n, nl)) // R>N?
-	return big_sub(r, rl, n, nl, r, szr);   // R = R - N
-    return nl;
 }
-#endif
 
 
 // al,bl < nl < k   R[al+bl]
-int big_mont_mul(ErlNifBigDigit* a, int al, ErlNifBigDigit* b, int bl,
+int big_mont_mul(redc_type_t redc_type,
+		 ErlNifBigDigit* a, int al, ErlNifBigDigit* b, int bl,
 		 ErlNifBigDigit* n, int nl,
 		 ErlNifBigDigit* np, int npl,
 		 ErlNifBigDigit* r, int szr)
 {
     ErlNifBigDigit T[2*nl];
-    int tl;
+    // int tl;
     assert(al <= nl);
     assert(bl <= nl);
     assert(npl <= nl);
-    tl = big_mul(a, al, b, bl, T, BIGNUM_SIZE(T));
-    return big_mont_redc(T, tl, n, nl, np, npl, r, szr);
+    // fixme: the product must be 2*nl number of digits!)
+    big_zero(T, 2*nl);
+    big_mul(a, al, b, bl, T, BIGNUM_SIZE(T));
+    return big_mont_redc(redc_type, T, 2*nl, n, nl, np, npl, r, szr);
 }
 
 // al < nl < k
-int big_mont_sqr(ErlNifBigDigit* a, int al,
+int big_mont_sqr(redc_type_t redc_type,
+		 ErlNifBigDigit* a, int al,
 		 ErlNifBigDigit* n, int nl,
 		 ErlNifBigDigit* np, int npl,
 		 ErlNifBigDigit* r, int szr)
 {
     ErlNifBigDigit T[2*nl];
-    int tl;
+    // int tl;
     assert(al <= nl);
     assert(npl <= nl);
-    tl = big_sqr(a, al, T, BIGNUM_SIZE(T));
-    return big_mont_redc(T, tl, n, nl, np, npl, r, szr);
+    big_zero(T, 2*nl);
+    big_sqr(a, al, T, BIGNUM_SIZE(T));
+    return big_mont_redc(redc_type, T, 2*nl, n, nl, np, npl, r, szr);
 }
 
 #define BIGPRINT1(fmt, x, xl, args...) do { 			\
@@ -549,7 +519,8 @@ int big_mont_sqr(ErlNifBigDigit* a, int al,
 #define BIGPRINT(fmt, x, xl, args...)
 
 // a^e (mod R)  (R=B^k > N)  (B = ErlNifBigDigit base) r[2*al]
-int big_mont_pow(ErlNifBigDigit* a, int al,
+int big_mont_pow(redc_type_t redc_type,
+		 ErlNifBigDigit* a, int al,
 		 ErlNifBigDigit* e, int el,
 		 ErlNifBigDigit* p, int pl,
 		 ErlNifBigDigit* n, int nl,
@@ -585,19 +556,21 @@ int big_mont_pow(ErlNifBigDigit* a, int al,
 	// printf("E[%d] = %d\r\n", pos, bit);
 	if (bit) {
 	    // P' = A*P (mod R)
-	    pl = big_mont_mul(A[s],al, P[u],pl, n,nl, np,npl,
+	    pl = big_mont_mul(redc_type,
+			      A[s],al, P[u],pl, n,nl, np,npl,
 			      P[v],BIGNUM_SIZE(P[v]));
 	    u = v; v = u^1;
 	    BIGPRINT("P%d = ", P[u], pl, pos);
 	}
 	// A' = A^2 (mod R)
-	al = big_mont_sqr(A[s], al, n, nl, np, npl, A[t], BIGNUM_SIZE(A[t]));
+	al = big_mont_sqr(redc_type, A[s], al,
+			  n, nl, np, npl, A[t], BIGNUM_SIZE(A[t]));
 	s = t; t = s^1;
 	BIGPRINT("A%d = ", A[s], al, pos);
     }
     // r = A*P (mod R)
     //printf("al=%d, pl=%d, nl=%d, npl=%d Rsize=%d\r\n", al, pl, nl, npl, 2*nl);
-    rl = big_mont_mul(A[s], al, P[u], pl, n, nl, np, npl, R, szR);
+    rl = big_mont_mul(redc_type, A[s], al, P[u], pl, n, nl, np, npl, R, szR);
     BIGPRINT("R%s = ", R, rl, "");
     return rl;
 }

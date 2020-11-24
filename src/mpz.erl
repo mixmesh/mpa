@@ -9,19 +9,31 @@
          probab_prime_p/2]).
 -export([big_powm/3]).
 -export([big_size/1, big_bits/1]).
--export([big_mont_redc/3, big_mont_redc/2]).
--export([big_mont_mul/4, big_mont_mul/3]).
--export([big_mont_sqr/3, big_mont_sqr/2]).
--export([big_mont_pow/5, big_mont_pow/3]).
--export([mont/1, redc/2]).
+-export([big_mont_redc/4, big_mont_redc/2]).
+-export([big_mont_mul/5, big_mont_mul/3]).
+-export([big_mont_sqr/4, big_mont_sqr/2]).
+-export([big_mont_pow/6, big_mont_pow/3]).
+-export([mont/1, mont/2, redc/2]).
 -export([to_mont/2, from_mont/2]).
 -export([to_mont/3, from_mont/3]).
 %% test
 -export([test1/0, test2/0, test3/0, test4/0]).
 -export([test11/0, test12/0, test13/0, test14/0]).
--export([test21/0, test22/0, test23/0, test24/0, test25/0]).
+-export([test21/0, test22/0, test23/0, test24/0, test25/0, test25/1]).
 -export([mont_pow/3, mont_mul/3, mont_sqr/2]).
--export([test_sqr_random/2, test_mul_random/2, test_pow_random/2]).
+-export([test_sqr_random/2, test_sqr_random/3]).
+-export([test_mul_random/2, test_mul_random/3]).
+-export([test_pow_random/2, test_pow_random/3]).
+
+-record(mont,
+	{
+	 type = default :: default | sos | fips,
+	 k,   %% size of n in number of bignum digits
+	 m1,  %% mont(1)  1 in montgomery space
+	 n,   %% modulus
+	 np,  %% -N^-1 (mod 2^k)
+	 ri   %% R^-1 (mod n)  (r = 1 << k)
+	}).
 
 
 %% Exported: dlog
@@ -72,25 +84,25 @@ big_powm(Base, Exp, Mod) ->
 big_size(X) -> gmp_nif:big_size(X).
 big_bits(X) -> gmp_nif:big_bits(X).
 
-big_mont_redc(T, {_K,_M1,N,Np,_Ri}) ->
-    big_mont_redc(T, N, Np).
-big_mont_redc(T, N, Np) ->
-    gmp_nif:big_mont_redc(T, N, Np).
+big_mont_redc(T, #mont{type=Type,n=N,np=Np}) ->
+    big_mont_redc(Type,T,N,Np).
+big_mont_redc(Type,T,N,Np) ->
+    gmp_nif:big_mont_redc(Type,T, N, Np).
 
-big_mont_mul(A, B, {_K,_M1,N,Np,_Ri}) ->
-    big_mont_mul(A, B, N, Np).
-big_mont_mul(A, B, N, Np) ->
-    gmp_nif:big_mont_mul(A, B, N, Np).
+big_mont_mul(A, B, #mont{type=Type,n=N,np=Np}) ->
+    big_mont_mul(Type,A, B, N, Np).
+big_mont_mul(Type,A, B, N, Np) ->
+    gmp_nif:big_mont_mul(Type,A,B,N,Np).
 
-big_mont_sqr(A, {_K,_M1,N,Np,_Ri}) ->
-    big_mont_sqr(A, N, Np).
-big_mont_sqr(A, N, Np) ->
-    gmp_nif:big_mont_sqr(A, N, Np).
+big_mont_sqr(A, #mont{type=Type,n=N,np=Np}) ->
+    big_mont_sqr(Type,A,N,Np).
+big_mont_sqr(Type,A, N, Np) ->
+    gmp_nif:big_mont_sqr(Type,A,N,Np).
 
-big_mont_pow(A, E, {_K,M1,N,Np,_Ri}) ->
-    big_mont_pow(A, E, M1, N, Np).
-big_mont_pow(A, E, P1, N, Np) ->
-    gmp_nif:big_mont_pow(A, E, P1, N, Np).
+big_mont_pow(Ah, E, #mont{type=Type,m1=M1,n=N,np=Np}) ->
+    big_mont_pow(Type,Ah,E,M1,N,Np).
+big_mont_pow(Type,Ah,E,P1,N,Np) ->
+    gmp_nif:big_mont_pow(Type,Ah,E,P1,N,Np).
 
 %% Exported: pow_ui
 
@@ -104,7 +116,12 @@ probab_prime_p(N, Reps) ->
   gmp_nif:mpz_probab_prime_p(binary:encode_unsigned(N), Reps).
 
 %% calculate mongomery paramters Ri,Np
-mont(N) when is_integer(N), N>0, N band 1 =:= 1 ->
+mont(N) ->
+    mont(default,N).
+
+-spec mont(Type::default|sos|fips, N::non_neg_integer()) -> #mont{}.
+				    
+mont(Type,N) when is_integer(N), N>0, N band 1 =:= 1 ->
     W = 8*erlang:system_info(wordsize),
     K = big_size(N)*W,
     R = (1 bsl K),
@@ -112,16 +129,16 @@ mont(N) when is_integer(N), N>0, N band 1 =:= 1 ->
     Ri = mod(S, N),
     Np = mod(-T, R),
     M1 = (1 bsl K) rem N,
-    {K,M1,N,Np,Ri}.
+    #mont{type=Type,k=K,m1=M1,n=N,np=Np,ri=Ri}.
 
-to_mont(X, {K,_M1,N,_Np,_Ri}) -> to_mont(X, K, N).
+to_mont(X, #mont{k=K,n=N}) -> to_mont(X, K, N).
 to_mont(X, K, N) -> (X bsl K) rem N.
 
-from_mont(Y, {_K,_M1,N,_Np,Ri}) -> from_mont(Y,Ri,N).
+from_mont(Y, #mont{n=N,ri=Ri}) -> from_mont(Y,Ri,N).
 from_mont(Y,Ri,N) -> (Y*Ri) rem N.
 
 %%  Montgomery reduction
-redc(T, {K,_M1,N,Np,_Ri}) ->
+redc(T, #mont{k=K,n=N,np=Np}) ->
     R1 = ((1 bsl K)-1),
     M = ((T band R1)*Np) band R1,
     V = (T + M*N) bsr K,
@@ -137,6 +154,15 @@ mod(A,N) ->
        true ->
 	    A1
     end.
+
+%% invert(X,P) when is_integer(X), X > 0, 
+%% 		 is_integer(P), P > 0, X < P ->
+%%    case egcd(X, P) of
+%%	{1,{A,_B}} when A < 0 -> P + A;
+%%	{1,{A,_B}} -> A;
+%%	_ ->
+%%	    erlang:error(not_defined)
+%%    end.
 
 egcd(R, Q) when is_integer(R), is_integer(Q) ->
     R1 = abs(R),
@@ -177,7 +203,7 @@ test1() ->
     Am = to_mont(A, M),
     B = 33,
     Bm = to_mont(B, M),
-    Rm = mpz:redc(Am*Bm, M),
+    Rm = redc(Am*Bm, M),
     C = from_mont(Rm, M),
     C = (A*B) rem P,
     C = 82,
@@ -227,7 +253,7 @@ test11() ->
     Am = to_mont(A, M),
     B = 1491922486076647757424410593223,
     Bm = to_mont(B, M),
-    Rm = mpz:redc(Am*Bm, M),
+    Rm = redc(Am*Bm, M),
     C = from_mont(Rm, M),
     C = (A*B) rem P,
     C = 3060820620989551345058379044987056313,
@@ -277,7 +303,7 @@ test21() ->
     Am = to_mont(A, M),
     B = 124060833865307543493568060615888984483974452188008593376614358923889775329311551928017371949352869174793233582962966084426368046363097562383329228081040634647665584981130599395343295428306766898340404601804058174196606881036706450931509901449845820591347944486874994264576959961749516461160241513031362543684,
     Bm = to_mont(B, M),
-    Rm = mpz:redc(Am*Bm, M),
+    Rm = redc(Am*Bm, M),
     C = from_mont(Rm, M),
     C = (A*B) rem ?P,
     ok.
@@ -315,23 +341,27 @@ test24() ->
     ok.
 
 test25() ->
-    M = mont(?P),
-    Gm = to_mont(?G, M),
-    test25_(M, Gm, 2).
+    test25(default).
 
-test25_(_M, _Gm, X) when X > 1000 -> 
+test25(Type) ->
+    Mp = mont(Type,?P),
+    Gm = to_mont(?G, Mp),
+    test25_(Mp, Gm, 2).
+
+test25_(_Mp, _Gm, X) when X > 1000 -> 
     ok;
-test25_(M, Gm, X) ->
+test25_(Mp, Gm, X) ->
     %% io:format("X = ~w\n", [X]),
-    Rm = big_mont_pow(Gm, X, M),
-    C = from_mont(Rm, M),
+    Rm = big_mont_pow(Gm, X, Mp),
+    C = from_mont(Rm, Mp),
     C = ipowm(?G, X, ?P),
-    test25_(M, Gm, X+1).
-
+    test25_(Mp, Gm, X+1).
 
 test_sqr_random(N, Range) -> 
+    test_sqr_random(default, N, Range).
+test_sqr_random(Type, N, Range) -> 
     rand:seed(exsss, erlang:system_time()),
-    M = mont(?P),
+    M = mont(Type, ?P),
     test_sqr_random_(N, Range, M).
 
 test_sqr_random_(0, _Range, _M) -> 
@@ -344,10 +374,11 @@ test_sqr_random_(I, Range, M) ->
     C = (A*A) rem ?P,
     test_sqr_random_(I-1, Range, M).
 
-
 test_mul_random(N, Range) -> 
+    test_mul_random(default, N, Range).
+test_mul_random(Type, N, Range) -> 
     rand:seed(exsss, erlang:system_time()),
-    M = mont(?P),
+    M = mont(Type, ?P),
     test_mul_random_(N, Range, M).
 
 test_mul_random_(0, _Range, _M) -> 
@@ -363,8 +394,10 @@ test_mul_random_(I, Range, M) ->
     test_mul_random_(I-1, Range, M).
 
 test_pow_random(N, Range) -> 
+    test_pow_random(default, N, Range).
+test_pow_random(Type, N, Range) ->
     rand:seed(exsss, erlang:system_time()),
-    M = mont(?P),
+    M = mont(Type, ?P),
     test_pow_random_(N, Range, M).
 
 test_pow_random_(0, _Range, _M) -> 
@@ -372,7 +405,7 @@ test_pow_random_(0, _Range, _M) ->
 test_pow_random_(I, Range, M) ->
     A = random(Range),
     Am = to_mont(A, M),
-    X = random(element(1,M)),
+    X = random(M#mont.k),
     Rm = big_mont_pow(Am, X, M),
     C = from_mont(Rm, M),
     C = ipowm(A, X, ?P),

@@ -5,6 +5,36 @@
 
 typedef ERL_NIF_TERM ErlNifBigDigit;
 
+#if (__SIZEOF_POINTER__ == 4) && defined(__SIZEOF_LONG_LONG__) && (__SIZEOF_LONG_LONG__ == 8)
+/* Assume 32-bit machine with long long support */
+typedef uint64_t   ErlNifBigDoubleDigit;
+typedef uint16_t   ErlNifHalfBigDigit;
+#define BIG_HAVE_DOUBLE_DIGIT 1
+
+#elif (__SIZEOF_POINTER__ == 4)
+/* Assume 32-bit machine with no long support */
+#undef  BIG_HAVE_DOUBLE_DIGIT
+typedef uint32_t   ErlNifBigDigit;
+typedef uint16_t  ErlNifHalfBigDigit;
+
+#elif (__SIZEOF_POINTER__ == 8)
+typedef uint64_t ErlNifBigDigit;
+typedef uint32_t ErlNifHalfBigDigit;
+/* Assume 64-bit machine, does it exist 128 bit long long long ? */
+#ifdef __SIZEOF_INT128__
+typedef __uint128_t  ErlNifBigDoubleDigit;
+#define BIG_HAVE_DOUBLE_DIGIT 1
+#else
+#undef  BIG_HAVE_DOUBLE_DIGIT
+#endif
+#else
+#error "cannot determine machine size"
+#endif
+
+#define BIGNUM_SIZE(arr)  (sizeof((arr))/sizeof(ErlNifBigDigit))
+
+
+
 #define NUM_TMP_DIGITS 4
 #define DIGIT_BITS (sizeof(ErlNifBigDigit)*8)
 

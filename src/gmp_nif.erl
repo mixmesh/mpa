@@ -4,10 +4,10 @@
 -export([big_powm/3]).
 -export([big_size/1]).
 -export([big_bits/1]).
--export([big_mont_redc/3]).
--export([big_mont_mul/4]).
--export([big_mont_sqr/3]).
--export([big_mont_pow/5]).
+-export([big_mont_redc/4]).
+-export([big_mont_mul/5]).
+-export([big_mont_sqr/4]).
+-export([big_mont_pow/6]).
 -on_load(init/0).
 
 %% Exported: init
@@ -64,16 +64,16 @@ big_size(_X) ->
 big_bits(_X) ->
     exit(nif_library_not_loaded).
 
-big_mont_redc(_T, _N, _Np) ->
+big_mont_redc(_Type,_T, _N, _Np) ->
     exit(nif_library_not_loaded).
 
-big_mont_mul(_A, _B, _N, _Np) ->
+big_mont_mul(_Type,_A, _B, _N, _Np) ->
     exit(nif_library_not_loaded).
 
-big_mont_sqr(_A, _N, _Np) ->
+big_mont_sqr(_Type,_A, _N, _Np) ->
     exit(nif_library_not_loaded).
 
-big_mont_pow(_A, _E, _P, _N, _Np) ->
+big_mont_pow(_Type,_A, _E, _P, _N, _Np) ->
     exit(nif_library_not_loaded).
 
 
