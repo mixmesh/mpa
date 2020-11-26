@@ -606,8 +606,8 @@ static int get_redc_type(ErlNifEnv* env, ERL_NIF_TERM arg, redc_type_t* type)
 	*type = REDC_DEFAULT;
     else if (arg == enif_make_atom(env, "sos"))
 	*type = REDC_SOS;
-    else if (arg == enif_make_atom(env, "fips"))
-	*type = REDC_FIPS;
+    else if (arg == enif_make_atom(env, "sps"))
+	*type = REDC_SPS;
     else
 	return 0;
     return 1;

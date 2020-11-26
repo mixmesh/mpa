@@ -7,7 +7,7 @@
 typedef enum {
     REDC_DEFAULT,
     REDC_SOS,
-    REDC_FIPS
+    REDC_SPS
 } redc_type_t;
 
 extern int big_mont_redc(redc_type_t redc_type,

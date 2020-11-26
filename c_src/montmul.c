@@ -10,109 +10,13 @@
 
 #include "montmul.h"
 
-
-#define MIN(a,b) (((a)<(b)) ? (a) : (b))
-#define MAX(a,b) (((a)>(b)) ? (a) : (b))
-
-/* add a and b with carry in + out */
-#define DSUMc(a,b,c,s) do {						\
-	ErlNifBigDigit ___cr = (c);					\
-	ErlNifBigDigit ___xr = (a)+(___cr);				\
-	ErlNifBigDigit ___yr = (b);					\
-	___cr = (___xr < ___cr);					\
-	___xr = ___yr + ___xr;						\
-	___cr += (___xr < ___yr);					\
-	s = ___xr;							\
-	c = ___cr;							\
-    }  while(0)
-
-/* add a and b with carry out */
-#define DSUM(a,b,c,s) do {						\
-	ErlNifBigDigit ___xr = (a);					\
-	ErlNifBigDigit ___yr = (b);					\
-	___xr = ___yr + ___xr;						\
-	s = ___xr;							\
-	c = (___xr < ___yr);						\
-    }  while(0)
-
-#define DSUBb(a,b,r,d) do {						\
-	ErlNifBigDigit ___cr = (r);					\
-	ErlNifBigDigit ___xr = (a);					\
-	ErlNifBigDigit ___yr = (b)+___cr;				\
-	___cr = (___yr < ___cr);					\
-	___yr = ___xr - ___yr;						\
-	___cr += (___yr > ___xr);					\
-	d = ___yr;							\
-	r = ___cr;							\
-    } while(0)
-
-#define DSUB(a,b,r,d) do {				\
-	ErlNifBigDigit ___xr = (a);			\
-	ErlNifBigDigit ___yr = (b);			\
-	___yr = ___xr - ___yr;				\
-	r = (___yr > ___xr);				\
-	d = ___yr;					\
-    } while(0)
-
-#define DCONST(n) ((ErlNifBigDigit)(n))
-
+#define UINT_T  ErlNifBigDigit
+#define UINTH_T ErlNifBigHalfDigit
 #ifdef BIG_HAVE_DOUBLE_DIGIT
-
-#define DLOW(x)        ((ErlNifBigDigit)(x))
-#define DHIGH(x)       ((ErlNifBigDigit)(((ErlNifBigDoubleDigit)(x)) >> D_EXP))
-
-#define DLOW2HIGH(x)   (((ErlNifDoubleDigit)(x)) << D_EXP)
-#define DDIGIT(a1,a0)  (DLOW2HIGH(a1) + (a0))
-
-#define DMULc(a,b,c,p) do {			       \
-        ErlNifBigDoubleDigit _t = ((ErlNifBigDoubleDigit)(a))*(b) + (c); \
-	p = DLOW(_t);						\
-	c = DHIGH(_t);						\
-    } while(0)
-
-#define DMUL(a,b,c1,c0) do {						\
-	ErlNifBigDoubleDigit _t = ((ErlNifBigDoubleDigit)(a))*(b);	\
-	c0 = DLOW(_t);					\
-	c1 = DHIGH(_t);					\
-    } while(0)
-
-#else
-
-#define H_EXP (D_EXP >> 1)
-#define LO_MASK ((ErlNifBigDigit)((DCONST(1) << H_EXP)-1))
-#define HI_MASK ((ErlNifBigDigit)(LO_MASK << H_EXP))
-
-/* Calculate a*b + d1 and store double prec result in d1, d0 */
-#define DMULc(a,b,d1,d0) do {					\
-	ErlNifHalfBigDigit __a0 = (a);				\
-	ErlNifHalfBigDigit __a1 = ((a) >> H_EXP);			\
-	ErlNifHalfBigDigit __b0 = (b);				\
-	ErlNifHalfBigDigit __b1 = ((b) >> H_EXP);			\
-	ErlNifBigDigit __a0b0 = (ErlNifBigDigit)__a0*__b0;		\
-	ErlNifBigDigit __a0b1 = (ErlNifBigDigit)__a0*__b1;		\
-	ErlNifBigDigit __a1b0 = (ErlNifBigDigit)__a1*__b0;		\
-	ErlNifBigDigit __a1b1 = (ErlNifBigDigit)__a1*__b1;		\
-	ErlNifBigDigit __p0,__p1,__p2,__c0;				\
-	DSUM(__a0b0,d1,__c0,__p0);				\
-	DSUM((__c0<<H_EXP),(__p0>>H_EXP),__p2,__p1);		\
-	DSUM(__p1,__a0b1,__c0,__p1);				\
-	__p2 += __c0;						\
-	DSUM(__p1,__a1b0,__c0,__p1);				\
-	__p2 += __c0;						\
-	DSUM(__p1,__a1b1<<H_EXP,__c0,__p1);			\
-	__p2 += __c0;						\
-	DSUM(__a1b1, (__p2<<H_EXP),__c0,__p2);			\
-	d1 = (__p2 & HI_MASK) | (__p1 >> H_EXP);		\
-	d0 = (__p1 << H_EXP) | (__p0 & LO_MASK);		\
-    } while(0)
-
-#define DMUL(a,b,d1,d0) do {				\
-	ErlNifBigDigit _ds = 0;				\
-	DMULc(a,b,_ds,d0);				\
-	d1 = _ds;					\
-    } while(0)
-
+#define UINTD_T ErlNifBigDoubleDigit
 #endif
+
+#include "unroll.i"
 
 #define D_EXP (__SIZEOF_POINTER__*8)
 #define D_MASK ((ErlNifBigDigit)(-1))      /* D_BASE-1 */
@@ -201,27 +105,19 @@ static int big_add(ErlNifBigDigit* x, int xl, ErlNifBigDigit* y, int yl,
     int i = 0;
 
     while((i < xl) && (i < yl)) {
-	assert(i < szr);
-	// r[i] = digit_add_c(x[i], y[i], &c);
-	DSUMc(x[i],y[i],c,r[i]);
+	addc(x[i],y[i],c,&c,&r[i]);
 	i++;
     }
     while(i < xl) {
-	assert(i < szr);
-	// r[i] = digit_add_c(x[i], 0, &c);
-	DSUMc(x[i],0,c,r[i]);
+	addc(x[i],0,c,&c,&r[i]);
 	i++;
     }
     while(i < yl) {
-	assert(i < szr);	
-	// r[i] = digit_add_c(0, y[i], &c);
-	DSUMc(0,y[i],c,r[i]);	
+	addc(0,y[i],c,&c,&r[i]);	
 	i++;
     }
-    if (c) {
-	assert(i < szr);
+    if (c)
 	r[i++] = c;
-    }
     return i;
 }
 
@@ -233,15 +129,11 @@ static int big_sub(ErlNifBigDigit* x, int xl, ErlNifBigDigit* y, int yl,
     int i = 0;
 
     while(i < yl) {
-	assert(i < szr);
-	// r[i] = digit_sub_b(x[i], y[i], &b);
-	DSUBb(x[i],y[i],b,r[i]);
+	subb(x[i],y[i],b,&b,&r[i]);
 	i++;
     }
     while(i < xl) {
-	assert(i < szr);
-	// r[i] = digit_sub_b(x[i], 0, &b);
-	DSUBb(x[i],0,b,r[i]);
+	subb(x[i],0,b,&b,&r[i]);
 	i++;
     }
     do {
@@ -273,10 +165,8 @@ static int inline big_mul_k(ErlNifBigDigit* x, int xl,
 	int j, ij;
 	for (j = 0, ij=i; (j < yl) && (ij < k); j++, ij++) {
 	    ErlNifBigDigit p;
-	    // ErlNifBigDigit p = digit_mul_c(x[i],y[j],&cp);
-	    DMULc(x[i],y[j],cp,p);
-	    // r[ij] = digit_add_c(p,r[ij],&c);
-	    DSUMc(p,r[ij],c,r[ij]);
+	    mula(x[i],y[j],cp,&cp,&p);
+	    addc(p,r[ij],c,&c,&r[ij]);
 	}
 	if (ij < k)
 	    r[ij] = c + cp;
@@ -302,13 +192,9 @@ static int inline big_mul(ErlNifBigDigit* x, int xl,
 	int j, ij;
 	for (j = 0, ij=i; (j < yl); j++, ij++) {
 	    ErlNifBigDigit p;
-	    // ErlNifBigDigit p = digit_mul_c(x[i],y[j],&cp);
-	    DMULc(x[i],y[j],cp,p);
-	    assert(ij < szr);
-	    // r[ij] = digit_add_c(p,r[ij],&c);
-	    DSUMc(p,r[ij],c,r[ij]);
+	    mula(x[i],y[j],cp,&cp,&p);
+	    addc(p,r[ij],c,&c,&r[ij]);
 	}
-	assert(ij < szr);
 	r[ij] = c + cp;
     }
     i = xl+yl-1;
@@ -340,30 +226,27 @@ static int inline big_sqr(ErlNifBigDigit* x, int xl,
 	si = ri;
 	
 	d = x[i++];
-	DMUL(d, d, z1, b0);
-	assert(si < szr);
-	DSUMc(r[si],b0,y_3,r[si]);
+	sqr(d, &z1, &b0);
+	// mul(d, d, &z1, &b0);
+	addc(r[si],b0,y_3,&y_3,&r[si]);
 	si++;
 
 	ij = i;
 	while(m--) {
-	    assert(ij < xl);
-	    DMUL(d, x[ij], b1, b0);
+	    mul(d, x[ij], &b1, &b0);
 	    ij++;
-	    DSUMc(b0, b0, y_0, z0);
-	    DSUMc(z0, z1, y_2, z2);
-	    assert(si < szr);
-	    DSUMc(r[si],z2,y_3,r[si]);
+	    addc(b0, b0, y_0, &y_0, &z0);
+	    addc(z0, z1, y_2, &y_2, &z2);
+	    addc(r[si],z2,y_3,&y_3,&r[si]);
 	    si++;
-	    DSUMc(b1, b1, y_1, z1);
+	    addc(b1, b1, y_1, &y_1, &z1);
 	}
 	z0 = y_0;
-	DSUMc(z0, z1, y_2, z2);
+	addc(z0, z1, y_2, &y_2, &z2);
 	assert(si < szr);
-	DSUMc(r[si], z2, y_3, r[si]);
+	addc(r[si], z2, y_3, &y_3, &r[si]);
 	if (n != 0) {
 	    si++;
-	    assert(si < szr);
 	    r[si] = (y_1+y_2+y_3);
 	    ri += 2;
 	}
@@ -394,43 +277,42 @@ int big_mont_redc_default(ErlNifBigDigit* T, int tl,
     big_zero(M, nl);
     ml = big_mul_k(T, tk, np, npl, M, nl); // M = T*N (mod B^k)
     big_zero(r, ml);
-    rl = big_mul(M, ml, n, nl, r, szr);    // R = M*N
-    rl = big_add(T, tl, r, rl, r, szr);    // R = T+M*N
-    rl = big_shr(r, rl, nl);               // R = R >> k
-    if (big_gt(r, rl, n, nl)) // R>N?
-	return big_sub(r, rl, n, nl, r, szr);   // R = R - N
+    rl = big_mul(M, ml, n, nl, r, szr);    // r = M*n
+    rl = big_add(T, tl, r, rl, r, szr);    // r = t+(M*N)
+    rl = big_shr(r, rl, nl);               // r = r >> k
+    if (big_gt(r, rl, n, nl)) // r>N?
+	return big_sub(r, rl, n, nl, r, szr);   // r = r - N
     return
 	rl;
 }
 
-// note that T is destructivly updated
-int big_mont_redc_sos(ErlNifBigDigit* t, int tl,
+// note that P is destructivly updated
+int big_mont_redc_sos(ErlNifBigDigit* P, int pl,
 		      ErlNifBigDigit* n, int s,
 		      ErlNifBigDigit* np, int npl,
 		      ErlNifBigDigit* Z, int szZ)
 {
     int i, j;
     int Zl;
-    ErlNifBigDigit C = 0;
+    ErlNifBigDigit t = 0;
     
     for (i = 0; i < s; i++) {
 	ErlNifBigDigit u = 0;
 	ErlNifBigDigit v;
-	ErlNifBigDigit m = t[i]*np[0];
+	ErlNifBigDigit q;
+
+	mul0(P[i],np[0],&q);
 
 	for (j = 0; j < s; j++) {
-	    ErlNifBigDigit u0 = 0;
-	    DMULc(n[j],m,u,v);              // (u,v) = m*n[j] + u
-	    DSUMc(v, t[i+j], u0, t[i+j]);   // (u,v) += t[i+j]
-	    u += u0;
+	    mulab(n[j],q,P[i+j],u,&u,&v);
+	    P[i+j] = v;
 	}
-	// (u,v) = t[i+s] + u + C;
-	DSUMc(t[i+s],C,u,t[i+s]);
-	C = u;
+	addc(P[i+s],t,u,&u,&P[i+s]);
+	t = u;
     }
     for (j = 0; j < s; j++)
-	Z[j] = t[j+s];
-    Z[s] = C;
+	Z[j] = P[j+s];
+    Z[s] = t;
     i = s;
     while(i && (Z[i]==0)) i--;
     Zl = i+1;
@@ -439,12 +321,71 @@ int big_mont_redc_sos(ErlNifBigDigit* t, int tl,
     return Zl;
 }
 
-int big_mont_redc_fips(ErlNifBigDigit* t, int tl,
-		       ErlNifBigDigit* n, int s,
-		       ErlNifBigDigit* np, int npl,
-		       ErlNifBigDigit* Z, int szZ)
+static void inline add31(ErlNifBigDigit a2,ErlNifBigDigit a1,ErlNifBigDigit a0,
+			 ErlNifBigDigit b0,
+			 ErlNifBigDigit* d2,ErlNifBigDigit* d1, ErlNifBigDigit* d0)
 {
-    return -1;
+    ErlNifBigDigit c;
+    add(a0, b0, &c, d0);
+    add(a1, c,  &c, d1);
+    add(a2, c,  &c, d2);
+}
+
+static void inline add32(ErlNifBigDigit a2,ErlNifBigDigit a1,ErlNifBigDigit a0,
+			 ErlNifBigDigit b1,ErlNifBigDigit b0,
+			 ErlNifBigDigit* d2,ErlNifBigDigit* d1,ErlNifBigDigit* d0)
+{
+    ErlNifBigDigit c;
+    add(a0, b0, &c,d0);
+    addc(a1,b1,c,&c,d1);
+    add(a2,c,&c,d2);
+}
+
+int big_mont_redc_sps(ErlNifBigDigit* P, int pl,
+		      ErlNifBigDigit* n, int s,
+		      ErlNifBigDigit* np, int npl,
+		      ErlNifBigDigit* Z, int szZ)
+{
+    ErlNifBigDigit t=0, u=0, v=0;
+    ErlNifBigDigit p0,p1;
+    int i, j, Zl;
+    
+    for (i = 0; i < s; i++) {
+	for (j = 0; j < i-1; j++) {
+	    // (t,u,v) = (t,u,v) + Z[j]*n[i-j]
+	    mul(Z[j],n[i-j],&p0,&p1);
+	    add32(t,u,v,p1,p0,&t,&u,&v);
+	}
+	// (t,y,v) = (t,u,v) + P[i]	
+	add31(t,u,v,P[i],&t,&u,&v);
+	// Z[i] = v*m0' mod 2^w
+	mul0(v, np[0], &Z[i]);
+	// (t,u,v) = (t,u,v)+Z[i]*n[0]
+	mul(Z[i],n[0],&p0,&p1);
+	add32(t,u,v,p1,p0,&t,&u,&v);
+	v=u; u=t; t=0;
+    }
+    for (i = s; i < 2*(s-1); i++) {
+	for (j = i-s+1; j < s-1; j++) {
+	    // (t,u,v) = (t,u,v) + Z[j]*n[i-j]
+	    mul(Z[j],n[i-j],&p0,&p1);
+	    add32(t,u,v,p1,p0,&t,&u,&v);
+	}
+	// (t,y,v) = (t,u,v) + P[i]
+	add31(t,u,v,P[i],&t,&u,&v);
+	Z[i-s] = v;
+	v=u; u=t; t=0;
+    }
+    // (t,u,v) = (t,u,v) + P[2s-1]
+    add31(t,u,v,P[2*s-1],&t,&u,&v);
+    Z[s-1] = v;
+    Z[s] = u;
+    i = s;
+    while(i && (Z[i]==0)) i--;
+    Zl = i+1;    
+    if (big_gt(Z, Zl, n, s)) // R>N?
+	return big_sub(Z, Zl, n, s, Z, Zl);   // R = R - N
+    return Zl;    
 }
 
 int big_mont_redc(redc_type_t redc_type,
@@ -456,13 +397,12 @@ int big_mont_redc(redc_type_t redc_type,
 	return big_mont_redc_default(t, tl, n, nl, np, npl, r, szr);
     case REDC_SOS:
 	return big_mont_redc_sos(t, tl, n, nl, np, npl, r, szr);
-    case REDC_FIPS:
-	return big_mont_redc_fips(t, tl, n, nl, np, npl, r, szr);
+    case REDC_SPS:
+	return big_mont_redc_sps(t, tl, n, nl, np, npl, r, szr);
     default:
 	return -1;
     }
 }
-
 
 // al,bl < nl < k   R[al+bl]
 int big_mont_mul(redc_type_t redc_type,

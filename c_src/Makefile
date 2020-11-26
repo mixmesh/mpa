@@ -5,7 +5,7 @@ OS=$(shell uname -s)
 CFLAGS=-MMD -MF .$<.d -I$(ERL_TOP)/usr/include
 #@END-C_SRC-DEFAULT-RULES@
 
-CFLAGS+=-finline-functions -std=c99 -Wall -Werror -O3 # -DDEBUG
+CFLAGS+=-finline-functions -std=c99 -Wall -O3 # -DDEBUG
 LDFLAGS+=-shared
 
 OBJS = gmp_nif.o dloglib.o erl_nif_big.o montmul.o
@@ -19,7 +19,7 @@ all: ../priv/gmp_nif.so
 %.o:	%.c
 	$(CC) $(CFLAGS) -c -fPIC $<
 
--include ".*.d"
+-include .*.d
 
 # For test purposes
 dlog: dlog.c
