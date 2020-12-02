@@ -15,3 +15,6 @@ clean:
 
 -include .*.d
 #@END-DEFAULT-RULES@
+
+runtest:
+	echo "do nothing"
