@@ -341,7 +341,9 @@ test24() ->
     ok.
 
 test25() ->
-    test25(default).
+    test25(default),
+    test25(sos).
+    %% test25(sps).
 
 test25(Type) ->
     Mp = mont(Type,?P),
