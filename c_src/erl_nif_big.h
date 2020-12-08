@@ -32,10 +32,6 @@ typedef __uint128_t  ErlNifBigDoubleDigit;
 #error "cannot determine machine size"
 #endif
 
-#define BIGNUM_SIZE(arr)  (sizeof((arr))/sizeof(ErlNifBigDigit))
-
-
-
 #define NUM_TMP_DIGITS 4
 #define DIGIT_BITS (sizeof(ErlNifBigDigit)*8)
 

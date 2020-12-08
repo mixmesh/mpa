@@ -3,7 +3,6 @@
 
 #include "erl_nif_big.h"
 
-
 typedef enum {
     REDC_DEFAULT,
     REDC_SOS,
