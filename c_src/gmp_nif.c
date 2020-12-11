@@ -608,11 +608,18 @@ static int get_redc_type(ErlNifEnv* env, ERL_NIF_TERM arg, redc_type_t* type)
 	*type = REDC_SOS;
     else if (arg == enif_make_atom(env, "sps"))
 	*type = REDC_SPS;
+    else if (arg == enif_make_atom(env, "cios"))
+	*type = REDC_CIOS;
+    else if (arg == enif_make_atom(env, "fips"))
+	*type = REDC_FIPS;
+    else if (arg == enif_make_atom(env, "fios"))
+	*type = REDC_FIOS;
+    else if (arg == enif_make_atom(env, "cihs"))
+	*type = REDC_CIHS;
     else
 	return 0;
     return 1;
 }
-
 
 // args mont_redc(T, N, Np, K)
 static ERL_NIF_TERM _big_mont_redc(ErlNifEnv* env, int argc,
@@ -640,6 +647,8 @@ static ERL_NIF_TERM _big_mont_redc(ErlNifEnv* env, int argc,
 			   n.digits, n.size,
 			   np.digits, np.size,
 			   R, BIGNUM_SIZE(R));
+	if (rl < 0)
+	    return enif_make_badarg(env);
 	r.size = rl;
 	r.sign = 0;
 	r.digits = R;
@@ -678,6 +687,8 @@ static ERL_NIF_TERM _big_mont_mul(ErlNifEnv* env, int argc,
 			  n.digits, n.size,
 			  np.digits, np.size,
 			  R, BIGNUM_SIZE(R));
+	if (rl < 0)
+	    return enif_make_badarg(env);
 	r.size = rl;
 	r.sign = 0;
 	r.digits = R;
@@ -713,6 +724,8 @@ static ERL_NIF_TERM _big_mont_sqr(ErlNifEnv* env, int argc,
 			  n.digits, n.size,
 			  np.digits, np.size,
 			  R, BIGNUM_SIZE(R));
+	if (rl < 0)
+	    return enif_make_badarg(env);	
 	r.size = rl;
 	r.sign = 0;
 	r.digits = R;
@@ -756,6 +769,8 @@ static ERL_NIF_TERM _big_mont_pow(ErlNifEnv* env, int argc,
 			  n.digits, n.size,
 			  np.digits, np.size,
 			  R, BIGNUM_SIZE(R));
+	if (rl < 0)
+	    return enif_make_badarg(env);
 	r.size = rl;
 	r.sign = 0;
 	r.digits = R;

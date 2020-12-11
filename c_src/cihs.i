@@ -1,4 +1,4 @@
-// Coarsely Integrated Hubrid Scanning (CIHS) Method
+// Coarsely Integrated Hybrid Scanning (CIHS) Method
 #ifndef __CIHS_I__
 #define __CIHS_I__
 

@@ -8,20 +8,15 @@
 #define D_EXP (__SIZEOF_POINTER__*8)
 #define D_MASK ((UINT_T)(-1))      /* D_BASE-1 */
 
-// print hi->lo
-void big_print(UINT_T* x, int xl)
+// copy sl, or at most dl bytes, from src to dst
+// return -1 if not all byte where copied
+static int big_copy(UINT_T* dst, int dl, UINT_T* src, int sl)
 {
     int i;
-    printf("[%d]{%lu",xl,(unsigned long)x[xl-1]);
-    for (i = xl-2; i >= 0; i--) printf(",%lu", (unsigned long)x[i]);
-    printf("}");
-}
-
-static void big_copy(UINT_T* dst, UINT_T* src, int n)
-{
-    int i;
+    int n = (sl > dl) ? dl : sl;
     for (i = 0; i < n; i++)
 	dst[i] = src[i];
+    return (sl > dl) ? -1 : sl;
 }
 
 static void big_zero(UINT_T* dst, int n)
@@ -29,6 +24,22 @@ static void big_zero(UINT_T* dst, int n)
     int i;
     for (i = 0; i < n; i++)
 	dst[i] = 0;
+}
+
+// copy and zero pad MSB or truncate if needed
+static int big_copyz(UINT_T* dst, int dl, UINT_T* src, int sl)
+{
+    int i;
+    int n = (sl > dl) ? dl : sl;
+    for (i = 0; i < n; i++)
+	dst[i] = src[i];
+    if (sl > dl)
+	return -1;
+    else {
+	for (i = n; i < dl; i++)
+	    dst[i] = 0;
+	return dl;
+    }
 }
 
 static int big_bits(UINT_T* x, int xl)
@@ -139,6 +150,29 @@ static int big_sub(UINT_T* x, int xl, UINT_T* y, int yl,
     } while((i>0) && (r[i] == 0));
     return i+1;
 }
+
+// special sub return borrow
+static int big_subb(UINT_T* x, UINT_T* y, UINT_T* r, int s)
+{
+    UINT_T B = 0;
+    int i;
+    for (i = 0; i < s; i++)
+	subb(x[i],y[i],B,&B,&r[i]);
+    subb(x[s],0,B,&B,&r[s]);
+    return B;
+}
+
+//
+// if (X > N) X = X - N
+//  
+static int big_norm0(UINT_T* x, int xl, UINT_T* n, int nl)
+{
+    if (big_comp(x, xl, n, nl) > 0)
+	return big_sub(x, xl, n, nl, x, xl);
+    else
+	return xl;
+}
+
 
 // inline shift x:xl k digits to the right
 static int big_shr(UINT_T* x, int xl, int k)

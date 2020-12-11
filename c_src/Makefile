@@ -26,4 +26,4 @@ dlog: dlog.c
 	$(CC) -std=c99 -Wall -Werror dlog.c -lgmp -o dlog
 
 clean:
-	rm -rf *.o ../priv/gmp_nif.so dlog
+	rm -rf *.o .*.d ../priv/gmp_nif.so dlog

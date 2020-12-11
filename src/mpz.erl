@@ -19,15 +19,30 @@
 %% test
 -export([test1/0, test2/0, test3/0, test4/0]).
 -export([test11/0, test12/0, test13/0, test14/0]).
--export([test21/0, test22/0, test23/0, test24/0, test25/0, test25/1]).
--export([mont_pow/3, mont_mul/3, mont_sqr/2]).
+-export([test21/0, test22/0, test23/0, test24/0, test25/0]).
+-export([test1/1, test2/1, test3/1, test4/1]).
+-export([test11/1, test12/1, test13/1, test14/1]).
+-export([test21/1, test22/1, test23/1, test24/1, test25/1]).
+
+
+-export([mont_pow/4, mont_mul/4, mont_sqr/3]).
 -export([test_sqr_random/2, test_sqr_random/3]).
 -export([test_mul_random/2, test_mul_random/3]).
 -export([test_pow_random/2, test_pow_random/3]).
 
+-type mont_meth() :: default | 
+		     sos | sps |
+		     cios | fips | fios | cihs.
+-type unsigned() :: non_neg_integer().
+
+-define(defmeth, default).
+-define(allmeth, [default,sos,sps,cios,fips,fios,cihs]).
+-define(imeth, [cios,fips,fios,cihs]).  %% integrated
+-define(smeth, [default,sos,sps]).      %% separate
+
 -record(mont,
 	{
-	 type = default :: default | sos | fips,
+	 meth = ?defmeth :: mont_meth(),
 	 k,   %% size of n in number of bignum digits
 	 m1,  %% mont(1)  1 in montgomery space
 	 n,   %% modulus
@@ -35,6 +50,11 @@
 	 ri   %% R^-1 (mod n)  (r = 1 << k)
 	}).
 
+-define(is_odd(P), (((P) band 1) =:= 1)).
+-define(is_meth(M), 
+	(((M)=:=default) orelse ((M)=:=sos) orelse ((M)=:=sps) 
+	 orelse ((M)=:=cios) orelse ((M)=:=fips) orelse ((M)=:=fios)
+	 orelse ((M)=:=cihs))).
 
 %% Exported: dlog
 
@@ -84,25 +104,25 @@ big_powm(Base, Exp, Mod) ->
 big_size(X) -> gmp_nif:big_size(X).
 big_bits(X) -> gmp_nif:big_bits(X).
 
-big_mont_redc(T, #mont{type=Type,n=N,np=Np}) ->
-    big_mont_redc(Type,T,N,Np).
-big_mont_redc(Type,T,N,Np) ->
-    gmp_nif:big_mont_redc(Type,T, N, Np).
+big_mont_redc(T, #mont{meth=Meth,n=N,np=Np}) ->
+    big_mont_redc(Meth,T,N,Np).
+big_mont_redc(Meth,T,N,Np) ->
+    gmp_nif:big_mont_redc(Meth,T, N, Np).
 
-big_mont_mul(A, B, #mont{type=Type,n=N,np=Np}) ->
-    big_mont_mul(Type,A, B, N, Np).
-big_mont_mul(Type,A, B, N, Np) ->
-    gmp_nif:big_mont_mul(Type,A,B,N,Np).
+big_mont_mul(A, B, #mont{meth=Meth,n=N,np=Np}) ->
+    big_mont_mul(Meth,A, B, N, Np).
+big_mont_mul(Meth,A, B, N, Np) ->
+    gmp_nif:big_mont_mul(Meth,A,B,N,Np).
 
-big_mont_sqr(A, #mont{type=Type,n=N,np=Np}) ->
-    big_mont_sqr(Type,A,N,Np).
-big_mont_sqr(Type,A, N, Np) ->
-    gmp_nif:big_mont_sqr(Type,A,N,Np).
+big_mont_sqr(A, #mont{meth=Meth,n=N,np=Np}) ->
+    big_mont_sqr(Meth,A,N,Np).
+big_mont_sqr(Meth,A, N, Np) ->
+    gmp_nif:big_mont_sqr(Meth,A,N,Np).
 
-big_mont_pow(Ah, E, #mont{type=Type,m1=M1,n=N,np=Np}) ->
-    big_mont_pow(Type,Ah,E,M1,N,Np).
-big_mont_pow(Type,Ah,E,P1,N,Np) ->
-    gmp_nif:big_mont_pow(Type,Ah,E,P1,N,Np).
+big_mont_pow(Ah, E, #mont{meth=Meth,m1=M1,n=N,np=Np}) ->
+    big_mont_pow(Meth,Ah,E,M1,N,Np).
+big_mont_pow(Meth,Ah,E,P1,N,Np) ->
+    gmp_nif:big_mont_pow(Meth,Ah,E,P1,N,Np).
 
 %% Exported: pow_ui
 
@@ -117,11 +137,11 @@ probab_prime_p(N, Reps) ->
 
 %% calculate mongomery paramters Ri,Np
 mont(N) ->
-    mont(default,N).
+    mont(?defmeth,N).
 
--spec mont(Type::default|sos|fips, N::non_neg_integer()) -> #mont{}.
+-spec mont(Meth::mont_meth(), N::unsigned()) -> #mont{}.
 				    
-mont(Type,N) when is_integer(N), N>0, N band 1 =:= 1 ->
+mont(Meth,N) when is_integer(N), N>0, ?is_odd(N) ->
     W = 8*erlang:system_info(wordsize),
     K = big_size(N)*W,
     R = (1 bsl K),
@@ -129,7 +149,7 @@ mont(Type,N) when is_integer(N), N>0, N band 1 =:= 1 ->
     Ri = mod(S, N),
     Np = mod(-T, R),
     M1 = (1 bsl K) rem N,
-    #mont{type=Type,k=K,m1=M1,n=N,np=Np,ri=Ri}.
+    #mont{meth=Meth,k=K,m1=M1,n=N,np=Np,ri=Ri}.
 
 to_mont(X, #mont{k=K,n=N}) -> to_mont(X, K, N).
 to_mont(X, K, N) -> (X bsl K) rem N.
@@ -191,14 +211,19 @@ ipowm_(A, B, M, P)  ->
  	    ipowm_(A1, B1, M, (A*P) rem M)
     end.
 
+
 sqr(A) when is_integer(A) ->
     A*A.
 
 %% montgomery test
 
 test1() ->
+    test1(?defmeth).
+
+test1(Meth) when ?is_meth(Meth) ->
+    io:format("test1: ~w\n", [Meth]),
     P = 101,
-    M = mont(P),
+    M = mont(Meth,P),
     A = 79,
     Am = to_mont(A, M),
     B = 33,
@@ -210,8 +235,11 @@ test1() ->
     ok.
 
 test2() ->
+    [test2(M) || M <- ?smeth].
+test2(Meth) when ?is_meth(Meth) ->
+    io:format("test2: ~w\n", [Meth]),
     P = 101,
-    M = mont(P),
+    M = mont(Meth,P),
     A = 79,
     Am = to_mont(A, M),
     B = 33,
@@ -223,12 +251,16 @@ test2() ->
     ok.    
 
 test3() ->
+    [test3(M) || M <- ?allmeth].
+test3(Meth) when ?is_meth(Meth) ->
+    io:format("test3: ~w\n", [Meth]),
     P = 101,
-    M = mont(P),
+    M = mont(Meth,P),
     A = 79,
     Am = to_mont(A, M),
     B = 33,
     Bm = to_mont(B, M),
+    io:format("Am=~w, Bm=~w\n", [Am, Bm]),
     Rm = big_mont_mul(Am, Bm, M),
     C = from_mont(Rm, M),
     C = (A*B) rem P,
@@ -236,8 +268,11 @@ test3() ->
     ok.    
 
 test4() ->
+    [test4(M) || M <- ?allmeth].
+test4(Meth) when ?is_meth(Meth) ->
+    io:format("test4: ~w\n", [Meth]),
     P = 101,
-    M = mont(P),
+    M = mont(Meth,P),
     A = 79,
     Am = to_mont(A, M),
     Rm = big_mont_sqr(Am, M),
@@ -247,8 +282,11 @@ test4() ->
     ok.    
 
 test11() ->
+    test11(?defmeth).
+test11(Meth) when ?is_meth(Meth) ->
+    io:format("test11: ~w\n", [Meth]),
     P = 1262773213764120865151395821008507246189,
-    M = mont(P),
+    M = mont(Meth,P),
     A = 2209866513432185383910552416615,
     Am = to_mont(A, M),
     B = 1491922486076647757424410593223,
@@ -260,8 +298,11 @@ test11() ->
     ok.
 
 test12() ->
+    [test12(M) || M <- ?smeth].
+test12(Meth) when ?is_meth(Meth) ->
+    io:format("test12: ~w\n", [Meth]),
     P = 1262773213764120865151395821008507246189,
-    M = mont(P),
+    M = mont(Meth,P),
     A = 2209866513432185383910552416615,
     Am = to_mont(A, M),
     B = 1491922486076647757424410593223,
@@ -272,8 +313,11 @@ test12() ->
     ok.    
 
 test13() ->
+    [test13(M) || M <- ?allmeth].
+test13(Meth) when ?is_meth(Meth) ->
+    io:format("test13: ~w\n", [Meth]),
     P = 1262773213764120865151395821008507246189,
-    M = mont(P),
+    M = mont(Meth,P),
     A = 2209866513432185383910552416615,
     Am = to_mont(A, M),
     B = 1491922486076647757424410593223,
@@ -284,8 +328,11 @@ test13() ->
     ok.    
 
 test14() ->
+    [test14(M) || M <- ?allmeth].
+test14(Meth) when ?is_meth(Meth) ->
+    io:format("test14: ~w\n", [Meth]),
     P = 1262773213764120865151395821008507246189,
-    M = mont(P),
+    M = mont(Meth,P),
     A = 2209866513432185383910552416615,
     Am = to_mont(A, M),
     Rm = big_mont_sqr(Am, M),
@@ -298,7 +345,10 @@ test14() ->
 -define(X, ((1 bsl 512) div 5)).
 
 test21() ->
-    M = mont(?P),
+    test21(?defmeth).
+test21(Meth) when ?is_meth(Meth) ->
+    io:format("test21: ~w\n", [Meth]),
+    M = mont(Meth,?P),
     A = 129015633621243001913449155039089342460245014035423996408293170177875331730667287169606301577788634719390344399495012523585332459829150811854319143390944179836371880331297042928788452376675529244126810320465199234812830335213501532015809681469166815018523250762130729029190848536853958461583303676087231435574,
     Am = to_mont(A, M),
     B = 124060833865307543493568060615888984483974452188008593376614358923889775329311551928017371949352869174793233582962966084426368046363097562383329228081040634647665584981130599395343295428306766898340404601804058174196606881036706450931509901449845820591347944486874994264576959961749516461160241513031362543684,
@@ -309,7 +359,10 @@ test21() ->
     ok.
 
 test22() ->
-    M = mont(?P),
+    [test22(M) || M <- ?smeth].
+test22(Meth) when ?is_meth(Meth) ->
+    io:format("test22: ~w\n", [Meth]),
+    M = mont(Meth,?P),
     A = 129015633621243001913449155039089342460245014035423996408293170177875331730667287169606301577788634719390344399495012523585332459829150811854319143390944179836371880331297042928788452376675529244126810320465199234812830335213501532015809681469166815018523250762130729029190848536853958461583303676087231435574,
     Am = to_mont(A, M),
     B = 124060833865307543493568060615888984483974452188008593376614358923889775329311551928017371949352869174793233582962966084426368046363097562383329228081040634647665584981130599395343295428306766898340404601804058174196606881036706450931509901449845820591347944486874994264576959961749516461160241513031362543684,
@@ -320,7 +373,10 @@ test22() ->
     ok.    
 
 test23() ->
-    M = mont(?P),
+    [test23(M) || M <- ?defmeth].
+test23(Meth) when ?is_meth(Meth) ->
+    io:format("test23: ~w\n", [Meth]),
+    M = mont(Meth,?P),
     A = 129015633621243001913449155039089342460245014035423996408293170177875331730667287169606301577788634719390344399495012523585332459829150811854319143390944179836371880331297042928788452376675529244126810320465199234812830335213501532015809681469166815018523250762130729029190848536853958461583303676087231435574,
     Am = to_mont(A, M),
     B = 124060833865307543493568060615888984483974452188008593376614358923889775329311551928017371949352869174793233582962966084426368046363097562383329228081040634647665584981130599395343295428306766898340404601804058174196606881036706450931509901449845820591347944486874994264576959961749516461160241513031362543684,
@@ -330,9 +386,11 @@ test23() ->
     C = (A*B) rem ?P,
     ok.    
 
-
 test24() ->
-    M = mont(?P),
+    [test24(M) || M <- ?allmeth].
+test24(Meth) when ?is_meth(Meth) ->
+    io:format("test24: ~w\n", [Meth]),
+    M = mont(Meth,?P),
     A = 129015633621243001913449155039089342460245014035423996408293170177875331730667287169606301577788634719390344399495012523585332459829150811854319143390944179836371880331297042928788452376675529244126810320465199234812830335213501532015809681469166815018523250762130729029190848536853958461583303676087231435574,
     Am = to_mont(A, M),
     Rm = big_mont_sqr(Am, M),
@@ -341,12 +399,11 @@ test24() ->
     ok.
 
 test25() ->
-    test25(default),
-    test25(sos).
-    %% test25(sps).
+    [test25(Meth) || Meth <- ?allmeth].
 
-test25(Type) ->
-    Mp = mont(Type,?P),
+test25(Meth) when ?is_meth(Meth) ->
+    io:format("test25: ~w\n", [Meth]),
+    Mp = mont(Meth,?P),
     Gm = to_mont(?G, Mp),
     test25_(Mp, Gm, 2).
 
@@ -360,10 +417,10 @@ test25_(Mp, Gm, X) ->
     test25_(Mp, Gm, X+1).
 
 test_sqr_random(N, Range) -> 
-    test_sqr_random(default, N, Range).
-test_sqr_random(Type, N, Range) -> 
+    test_sqr_random(?defmeth, N, Range).
+test_sqr_random(Meth, N, Range) -> 
     rand:seed(exsss, erlang:system_time()),
-    M = mont(Type, ?P),
+    M = mont(Meth, ?P),
     test_sqr_random_(N, Range, M).
 
 test_sqr_random_(0, _Range, _M) -> 
@@ -377,10 +434,10 @@ test_sqr_random_(I, Range, M) ->
     test_sqr_random_(I-1, Range, M).
 
 test_mul_random(N, Range) -> 
-    test_mul_random(default, N, Range).
-test_mul_random(Type, N, Range) -> 
+    test_mul_random(?defmeth, N, Range).
+test_mul_random(Meth, N, Range) -> 
     rand:seed(exsss, erlang:system_time()),
-    M = mont(Type, ?P),
+    M = mont(Meth, ?P),
     test_mul_random_(N, Range, M).
 
 test_mul_random_(0, _Range, _M) -> 
@@ -396,10 +453,10 @@ test_mul_random_(I, Range, M) ->
     test_mul_random_(I-1, Range, M).
 
 test_pow_random(N, Range) -> 
-    test_pow_random(default, N, Range).
-test_pow_random(Type, N, Range) ->
+    test_pow_random(?defmeth, N, Range).
+test_pow_random(Meth, N, Range) ->
     rand:seed(exsss, erlang:system_time()),
-    M = mont(Type, ?P),
+    M = mont(Meth, ?P),
     test_pow_random_(N, Range, M).
 
 test_pow_random_(0, _Range, _M) -> 
@@ -413,25 +470,38 @@ test_pow_random_(I, Range, M) ->
     C = ipowm(A, X, ?P),
     test_pow_random_(I-1, Range, M).
 
-%%
-mont_mul(A, B, N) ->
-    M = mont(N),
+%% A*B mod P (using method Meth)
+-spec mont_mul(Meth::mont_meth(),
+	       A::unsigned(), B::unsigned(), P::unsigned()) ->
+	  unsigned().
+
+mont_mul(Meth, A, B, P) when ?is_meth(Meth), ?is_odd(P) ->
+    M = mont(Meth, P),
     Am = to_mont(A, M),
     Bm = to_mont(B, M),
-    Rm = big_mont_mul(Am, Bm, M),
+    Cm = big_mont_mul(Am, Bm, M),
+    from_mont(Cm, M).
+
+-spec mont_sqr(Meth::mont_meth(),A::unsigned(),
+	       P::unsigned()) -> unsigned().
+%% A^2 mod P (using method Meth)
+mont_sqr(Meth, A, P) when ?is_meth(Meth), ?is_odd(P) ->
+    M = mont(Meth, P),
+    Am = to_mont(A, M),
+    Cm = big_mont_sqr(Am, M),
+    from_mont(Cm, M).
+
+-spec mont_pow(Meth::mont_meth(),
+	       A::unsigned(), N::unsigned(), P::unsigned()) ->
+	  unsigned().
+
+%% A^N mod P
+mont_pow(Meth, A, N, P) when ?is_meth(Meth) ->
+    M = mont(Meth,P),
+    Am = to_mont(A, M),
+    Rm = big_mont_pow(Am, N, M),
     from_mont(Rm, M).
 
-mont_sqr(A, N) ->
-    M = mont(N),
-    Am = to_mont(A, M),
-    Rm = big_mont_sqr(Am, M),
-    from_mont(Rm, M).
-
-mont_pow(A, B, N) ->
-    M = mont(N),
-    Am = to_mont(A, M),
-    Rm = big_mont_pow(Am, B, M),
-    from_mont(Rm, M).
 
 random({Min,Max}) ->
     Min + rand:uniform((Max-Min)+1) - 1;

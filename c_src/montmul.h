@@ -6,7 +6,11 @@
 typedef enum {
     REDC_DEFAULT,
     REDC_SOS,
-    REDC_SPS
+    REDC_SPS,
+    REDC_CIOS,
+    REDC_FIPS,
+    REDC_FIOS,
+    REDC_CIHS,
 } redc_type_t;
 
 extern int big_mont_redc(redc_type_t redc_type,
