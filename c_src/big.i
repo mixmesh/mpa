@@ -5,19 +5,10 @@
 #define INLINE inline
 #endif
 
-#define D_EXP (__SIZEOF_POINTER__*8)
-#define D_MASK ((UINT_T)(-1))      /* D_BASE-1 */
+#include "big3.i"
 
-// copy sl, or at most dl bytes, from src to dst
-// return -1 if not all byte where copied
-static int big_copy(UINT_T* dst, int dl, UINT_T* src, int sl)
-{
-    int i;
-    int n = (sl > dl) ? dl : sl;
-    for (i = 0; i < n; i++)
-	dst[i] = src[i];
-    return (sl > dl) ? -1 : sl;
-}
+#define D_EXP (__SIZEOF_POINTER__*8)
+#define D_MASK ((ErlNifBigDigit)(-1))      /* D_BASE-1 */
 
 static void big_zero(UINT_T* dst, int n)
 {
@@ -26,20 +17,11 @@ static void big_zero(UINT_T* dst, int n)
 	dst[i] = 0;
 }
 
-// copy and zero pad MSB or truncate if needed
-static int big_copyz(UINT_T* dst, int dl, UINT_T* src, int sl)
+static void big_copy(UINT_T* dst, UINT_T* src, int s)
 {
     int i;
-    int n = (sl > dl) ? dl : sl;
-    for (i = 0; i < n; i++)
+    for (i = 0; i < s; i++)
 	dst[i] = src[i];
-    if (sl > dl)
-	return -1;
-    else {
-	for (i = n; i < dl; i++)
-	    dst[i] = 0;
-	return dl;
-    }
 }
 
 static int big_bits(UINT_T* x, int xl)
@@ -55,7 +37,7 @@ static int big_bits(UINT_T* x, int xl)
     return n;
 }
 
-static int big_bit_test(UINT_T* x, int xl, unsigned pos)
+static int big_test(UINT_T* x, int xl, unsigned pos)
 {
     int d = pos / D_EXP; // digit
     pos %= D_EXP;      // bit
@@ -63,13 +45,6 @@ static int big_bit_test(UINT_T* x, int xl, unsigned pos)
     return (x[d] & (1 << pos)) != 0;
 }
 
-#if 0
-static int big_small(UINT_T* x, UINT_T d)
-{
-    x[0] = d;
-    return 1;
-}
-#endif
 
 static int big_comp(UINT_T* x, int xl, UINT_T* y, int yl)
 {
@@ -151,7 +126,7 @@ static int big_sub(UINT_T* x, int xl, UINT_T* y, int yl,
     return i+1;
 }
 
-// special sub return borrow
+// subtract and return borrow
 static int big_subb(UINT_T* x, UINT_T* y, UINT_T* r, int s)
 {
     UINT_T B = 0;
@@ -165,7 +140,7 @@ static int big_subb(UINT_T* x, UINT_T* y, UINT_T* r, int s)
 //
 // if (X > N) X = X - N
 //  
-static int big_norm0(UINT_T* x, int xl, UINT_T* n, int nl)
+static INLINE int big_norm0(UINT_T* x, int xl, UINT_T* n, int nl)
 {
     if (big_comp(x, xl, n, nl) > 0)
 	return big_sub(x, xl, n, nl, x, xl);
@@ -173,9 +148,8 @@ static int big_norm0(UINT_T* x, int xl, UINT_T* n, int nl)
 	return xl;
 }
 
-
 // inline shift x:xl k digits to the right
-static int big_shr(UINT_T* x, int xl, int k)
+static INLINE int big_shr(UINT_T* x, int xl, int k)
 {
     int n = xl - k;
     int i;
@@ -184,7 +158,7 @@ static int big_shr(UINT_T* x, int xl, int k)
     return n;
 }
 
-// multiply x and y module (B^k) (B is 2^w) (w = machine word size)
+// multiply x and y module (B^k) (B is 2^w) (w = 8*sizeof(UINT_T))
 static INLINE int big_mul_k(UINT_T* x, int xl,
 			    UINT_T* y, int yl,
 			    UINT_T* r, int k)
@@ -209,6 +183,24 @@ static INLINE int big_mul_k(UINT_T* x, int xl,
 	return i+1;
 }
 
+// multiply x[n] and y[n] produce result r[2n]
+// the result of x[n]*y[n] is added to r[2n] so it must be
+// set to zero before calling big_n_mul, unless the some constant
+// is added ofcourse
+static INLINE void big_n_mul(UINT_T* x, UINT_T* y, UINT_T* r, int n)
+{
+    int i;
+    for (i = 0; i < n; i++) {
+	UINT_T c = 0;
+	int j, ij=i;
+	for (j = 0; j < n; j++) {
+	    mulab(x[i],y[j],r[ij],c,&c,&r[ij]);
+	    ij++;
+	}
+	r[ij] = c;  // top index is 2n-1
+    }
+}
+
 static INLINE int big_mul(UINT_T* x, int xl,
 			  UINT_T* y, int yl,
 			  UINT_T* r, int szr)
@@ -231,6 +223,33 @@ static INLINE int big_mul(UINT_T* x, int xl,
     else
 	return i+1;
 }
+
+// x[n]  r[2n+2]
+static INLINE int big_n_sqr(UINT_T* x, UINT_T* r, int s)
+{
+    int i;
+
+    for (i = 0; i < s; i++) {
+	UINT_T c[3];
+	int j;
+	zero3(c);
+	sqra(x[i], r[i+i], &c[0], &r[i+i]);
+	for (j = i+1; j < s; j++) {
+	    UINT_T b[2];
+	    mul(x[i],x[j],&b[1],&b[0]);   // (b1,b0) = xi*xj
+	    add32(c, b, c);               // (c2,c1,c0) += (b1,b0)
+	    add32(c, b, c);               // (c2,c1,c0) += (b1,b0)
+	    add31(c, r[i+j], c);          // (c2,c1,c0) += r[i+j]
+	    r[i+j] = c[0];
+	    shr3(c);
+	}
+	r[i+s] = c[1];
+	r[i+s+1] = c[2];
+    }
+    assert(r[s+s+1] == 0);
+    return s+s;
+}
+
 
 static INLINE int big_sqr(UINT_T* x, int xl,
 			  UINT_T* r, int szr)
@@ -279,8 +298,5 @@ static INLINE int big_sqr(UINT_T* x, int xl,
     else
 	return si + 1;    
 }
-
-
-
 
 #endif

@@ -10,12 +10,6 @@
 
 #include "montmul.h"
 
-#define UINT_T  ErlNifBigDigit
-#define UINTH_T ErlNifBigHalfDigit
-#ifdef BIG_HAVE_DOUBLE_DIGIT
-#define UINTD_T ErlNifBigDoubleDigit
-#endif
-
 void big_print(UINT_T* x, int xl);
 
 #define BIGPRINT1(fmt, x, xl, args...) do { 			\
@@ -29,11 +23,9 @@ void big_print(UINT_T* x, int xl);
 #endif
 #define BIGPRINT(fmt, x, xl, args...)
 
-
 #include "digit.i"
 #include "big.i"
 
-#include "redc.i"
 #include "sos.i"
 #include "sps.i"
 #include "cios.i"
@@ -49,7 +41,6 @@ void big_print(UINT_T* x, int xl)
     for (i = xl-2; i >= 0; i--) printf(",%lu", (unsigned long)x[i]);
     printf("}");
 }
-
 
 int big_mont_norm(UINT_T* r, int rl, UINT_T* n, int nl)
 {
@@ -152,15 +143,15 @@ int big_mont_pow(redc_type_t redc_type,
     int rl;
 
     u = 0; v = u^1;
-    big_copy(P[u], s, p, s);   // = mont(1) !
+    big_copy(P[u], p, s);   // = mont(1) !
 
     c = 0; d = c^1;
-    big_copy(A[c], s, a, s);  // check al!
+    big_copy(A[c], a, s);  // check al!
 
     nbits = big_bits(e, el)-1;
 
     for (pos = 0; pos < nbits; pos++) {
-	int bit = big_bit_test(e, el, pos);
+	int bit = big_test(e, el, pos);
 	if (bit) {
 	    big_mont_mul(redc_type,A[c],P[u],n,np,P[v],s);
 	    u = v; v = u^1;
