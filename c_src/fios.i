@@ -2,12 +2,9 @@
 #ifndef __FIOS_I__
 #define __FIOS_I__
 
-// include "unroll.i"
-
-
-// a[s], b[s], t[s+3]!
+// a[s], b[s], r[s+3]!
 static int big_mont_mul_fios(UINT_T* a, UINT_T* b, UINT_T* np, UINT_T* n,
-			     UINT_T* t,int s)
+			     UINT_T* r,int s)
 {
     int i;
     for(i=0; i < s; i++) {
@@ -16,21 +13,21 @@ static int big_mont_mul_fios(UINT_T* a, UINT_T* b, UINT_T* np, UINT_T* n,
 	UINT_T S;
 	int j;
 
-	mula(a[0], b[i], t[0], &C, &S);
-	big_addc(t, 1, C);
+	mula(a[0], b[i], r[0], &C, &S);
+	big_addc(r, 1, C);
 	mul0(S, np[0], &m);
 	mula(m, n[0], S, &C, &S);
 
 	for (j = 1; j < s; j++) {
-	    mulab(a[j],b[i],t[j],C,&C,&S);
-	    big_addc(t, j+1, C);
-	    mula(m, n[j], S, &C, &t[j-1]);
+	    mulab(a[j],b[i],r[j],C,&C,&S);
+	    big_addc(r, j+1, C);
+	    mula(m, n[j], S, &C, &r[j-1]);
 	}
-	add(t[s], C, &C, &t[s-1]);
-	t[s] = t[s+1] + C;
-	t[s+1] = 0;
+	add(r[s], C, &C, &r[s-1]);
+	r[s] = r[s+1] + C;
+	r[s+1] = 0;
     }
-    return s+1;
+    return s+2;
 }
 
 #endif

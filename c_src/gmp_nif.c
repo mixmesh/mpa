@@ -600,11 +600,41 @@ static ERL_NIF_TERM _big_bits(ErlNifEnv* env, int argc,
     return enif_make_int(env,n);
 }
 
+
+// copy and zero pad MSB or truncate if needed
+static int copyz(ErlNifBigDigit* dst, int dl,
+		 ErlNifBigDigit* src, int sl)
+{
+    if (sl <= dl) {
+	memcpy(dst, src, sl*sizeof(ErlNifBigDigit));
+	memset(dst+sl, 0, (dl-sl)*sizeof(ErlNifBigDigit));
+	return dl;
+    }
+    else {
+	memcpy(dst, src, dl*sizeof(ErlNifBigDigit));
+	return -1;
+    }
+}
+
+
+static int get_number_ds(ErlNifEnv* env, ERL_NIF_TERM t,
+			 ErlNifBignum* big, ErlNifBigDigit* ds, int s)
+{
+    if (!enif_get_number(env, t, big))
+	return 0;
+    if (big->size > s)
+	return 0;
+    if (big->size < s) {
+	copyz(ds, s, big->digits, big->size);
+	big->digits = ds;
+	big->size = s;
+    }
+    return 1;
+}
+
 static int get_redc_type(ErlNifEnv* env, ERL_NIF_TERM arg, redc_type_t* type)
 {
-    if (arg == enif_make_atom(env, "default"))
-	*type = REDC_DEFAULT;
-    else if (arg == enif_make_atom(env, "sos"))
+    if (arg == enif_make_atom(env, "sos"))
 	*type = REDC_SOS;
     else if (arg == enif_make_atom(env, "sps"))
 	*type = REDC_SPS;
@@ -621,77 +651,41 @@ static int get_redc_type(ErlNifEnv* env, ERL_NIF_TERM arg, redc_type_t* type)
     return 1;
 }
 
-// args mont_redc(T, N, Np, K)
-static ERL_NIF_TERM _big_mont_redc(ErlNifEnv* env, int argc,
-				   const ERL_NIF_TERM argv[])
-{
-    ErlNifBignum t;
-    ErlNifBignum n;
-    ErlNifBignum np;
-    redc_type_t redc_type;
-
-    if (!get_redc_type(env, argv[0], &redc_type))
-	return enif_make_badarg(env);    
-    if (!enif_get_number(env, argv[1], &t))
-	return enif_make_badarg(env);
-    if (!enif_get_number(env, argv[2], &n))
-	return enif_make_badarg(env);
-    if (!enif_get_number(env, argv[3], &np))
-	return enif_make_badarg(env);
-    {
-	ErlNifBignum r;
-	ErlNifBigDigit R[2*n.size+1];
-	int rl;
-	rl = big_mont_redc(redc_type,
-			   t.digits, t.size,
-			   n.digits, n.size,
-			   np.digits, np.size,
-			   R, BIGNUM_SIZE(R));
-	if (rl < 0)
-	    return enif_make_badarg(env);
-	r.size = rl;
-	r.sign = 0;
-	r.digits = R;
-	return enif_make_number(env, &r);
-    }
-}
-
-// args mont_redc(A, B, N, Np, K)
+// args mont_mul(A, B, N, Np, K)
 static ERL_NIF_TERM _big_mont_mul(ErlNifEnv* env, int argc,
 				   const ERL_NIF_TERM argv[])
 {
-    ErlNifBignum a;
-    ErlNifBignum b;
     ErlNifBignum n;
     ErlNifBignum np;
     redc_type_t redc_type;
 
     if (!get_redc_type(env, argv[0], &redc_type))
-	return enif_make_badarg(env);    
-    if (!enif_get_number(env, argv[1], &a))
-	return enif_make_badarg(env);    
-    if (!enif_get_number(env, argv[2], &b))
 	return enif_make_badarg(env);
     if (!enif_get_number(env, argv[3], &n))
 	return enif_make_badarg(env);
     if (!enif_get_number(env, argv[4], &np))
 	return enif_make_badarg(env);
-    
     {
+	int s = n.size;
+	int rl;	
 	ErlNifBignum r;
-	ErlNifBigDigit R[2*n.size+1];
-	int rl;
-	rl = big_mont_mul(redc_type,
-			  a.digits, a.size,
-			  b.digits, b.size,
-			  n.digits, n.size,
-			  np.digits, np.size,
-			  R, BIGNUM_SIZE(R));
+	ErlNifBigDigit rs[2*s+1];
+	ErlNifBignum a;
+	ErlNifBignum b;
+	ErlNifBigDigit as[s];
+	ErlNifBigDigit bs[s];
+    
+	if (!get_number_ds(env, argv[1], &a, as, s))
+	    return enif_make_badarg(env);
+	if (!get_number_ds(env, argv[2], &b, bs, s))
+	    return enif_make_badarg(env);
+
+	rl = big_mont_mul(redc_type,a.digits,b.digits,n.digits,np.digits,rs,s);
 	if (rl < 0)
 	    return enif_make_badarg(env);
 	r.size = rl;
 	r.sign = 0;
-	r.digits = R;
+	r.digits = rs;
 	return enif_make_number(env, &r);
     }
 }
@@ -700,58 +694,50 @@ static ERL_NIF_TERM _big_mont_mul(ErlNifEnv* env, int argc,
 static ERL_NIF_TERM _big_mont_sqr(ErlNifEnv* env, int argc,
 				  const ERL_NIF_TERM argv[])
 {
-    ErlNifBignum a;
     ErlNifBignum n;
     ErlNifBignum np;
     redc_type_t redc_type;
 
     if (!get_redc_type(env, argv[0], &redc_type))
 	return enif_make_badarg(env);
-    if (!enif_get_number(env, argv[1], &a))
-	return enif_make_badarg(env);    
+
     if (!enif_get_number(env, argv[2], &n))
 	return enif_make_badarg(env);
     if (!enif_get_number(env, argv[3], &np))
 	return enif_make_badarg(env);
     
     {
-	ErlNifBignum r;
-	ErlNifBigDigit R[2*n.size+1];
+	int s = n.size;
 	int rl;
-	
-	rl = big_mont_sqr(redc_type,
-			  a.digits, a.size,
-			  n.digits, n.size,
-			  np.digits, np.size,
-			  R, BIGNUM_SIZE(R));
+	ErlNifBignum r;
+	ErlNifBigDigit rs[2*s+1];
+	ErlNifBignum a;
+	ErlNifBigDigit as[s];
+
+	if (!get_number_ds(env, argv[1], &a, as, s))
+	    return enif_make_badarg(env);
+	rl = big_mont_sqr(redc_type, a.digits, n.digits, np.digits, rs, s);
 	if (rl < 0)
 	    return enif_make_badarg(env);	
 	r.size = rl;
 	r.sign = 0;
-	r.digits = R;
+	r.digits = rs;
 	return enif_make_number(env, &r);
     }    
 }
-
 
 // args mont_pow(A, E, P, N, Np)
 static ERL_NIF_TERM _big_mont_pow(ErlNifEnv* env, int argc,
 				  const ERL_NIF_TERM argv[])
 {
-    ErlNifBignum a;
     ErlNifBignum e;
-    ErlNifBignum p;
     ErlNifBignum n;
     ErlNifBignum np;
     redc_type_t redc_type;
 
     if (!get_redc_type(env, argv[0], &redc_type))
 	return enif_make_badarg(env);        
-    if (!enif_get_number(env, argv[1], &a))
-	return enif_make_badarg(env);
     if (!enif_get_number(env, argv[2], &e))
-	return enif_make_badarg(env);
-    if (!enif_get_number(env, argv[3], &p))
 	return enif_make_badarg(env);
     if (!enif_get_number(env, argv[4], &n))
 	return enif_make_badarg(env);    
@@ -759,21 +745,29 @@ static ERL_NIF_TERM _big_mont_pow(ErlNifEnv* env, int argc,
 	return enif_make_badarg(env);
 
     {
+	int s = n.size;
+	ErlNifBignum a;
+	ErlNifBigDigit as[s];
+	ErlNifBignum p;
+	ErlNifBigDigit ps[s];
 	ErlNifBignum r;
-	ErlNifBigDigit R[2*n.size+1];
+	ErlNifBigDigit rs[2*s+1];
 	int rl;
+
+	if (!get_number_ds(env, argv[3], &p, ps, s))
+	    return enif_make_badarg(env);
+	if (!get_number_ds(env, argv[1], &a, as, s))
+	    return enif_make_badarg(env);
+
 	rl = big_mont_pow(redc_type,
-			  a.digits, a.size,
-			  e.digits, e.size,
-			  p.digits, p.size,
-			  n.digits, n.size,
-			  np.digits, np.size,
-			  R, BIGNUM_SIZE(R));
+			  a.digits, e.digits, e.size,
+			  p.digits, n.digits, np.digits,
+			  rs, s);
 	if (rl < 0)
 	    return enif_make_badarg(env);
 	r.size = rl;
 	r.sign = 0;
-	r.digits = R;
+	r.digits = rs;
 	return enif_make_number(env, &r);
     }
 }
@@ -791,7 +785,6 @@ static ErlNifFunc nif_funcs[] = {
   {"big_size", 1, _big_size},
   {"big_bits", 1, _big_bits},
   {"big_powm", 3, _big_powm},
-  {"big_mont_redc", 4, _big_mont_redc},
   {"big_mont_mul", 5, _big_mont_mul},
   {"big_mont_sqr", 4, _big_mont_sqr},
   {"big_mont_pow", 6, _big_mont_pow},  

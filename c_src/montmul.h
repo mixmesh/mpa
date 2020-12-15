@@ -4,7 +4,6 @@
 #include "erl_nif_big.h"
 
 typedef enum {
-    REDC_DEFAULT,
     REDC_SOS,
     REDC_SPS,
     REDC_CIOS,
@@ -13,26 +12,17 @@ typedef enum {
     REDC_CIHS,
 } redc_type_t;
 
-extern int big_mont_redc(redc_type_t redc_type,
-			 ErlNifBigDigit* t, int tl, ErlNifBigDigit* n, int nl,
-			 ErlNifBigDigit* np, int npl,
-			 ErlNifBigDigit* r, int szr);
 extern int big_mont_mul(redc_type_t redc_type,
-			ErlNifBigDigit* a, int al,
-			ErlNifBigDigit* b, int bl,
-			ErlNifBigDigit* n, int nl,
-			ErlNifBigDigit* np, int npl,
-			ErlNifBigDigit* r, int rzr);
+			ErlNifBigDigit* a, ErlNifBigDigit* b,
+			ErlNifBigDigit* n, ErlNifBigDigit* np,
+			ErlNifBigDigit* r, int s);
 extern int big_mont_sqr(redc_type_t redc_type,
-			ErlNifBigDigit* a, int al,
-			ErlNifBigDigit* n, int nl,
-			ErlNifBigDigit* np, int npl,
-			ErlNifBigDigit* r, int szr);
+			ErlNifBigDigit* a,
+			ErlNifBigDigit* n, ErlNifBigDigit* np,
+			ErlNifBigDigit* r, int s);
 extern int big_mont_pow(redc_type_t redc_type,
-			ErlNifBigDigit* a, int al,
+			ErlNifBigDigit* a, 
 			ErlNifBigDigit* e, int el,
-			ErlNifBigDigit* p, int pl,
-			ErlNifBigDigit* n, int nl,
-			ErlNifBigDigit* np, int npl,
-			ErlNifBigDigit* r, int szr);
+			ErlNifBigDigit* p,  ErlNifBigDigit* n, 
+			ErlNifBigDigit* np, ErlNifBigDigit* r, int s);
 #endif

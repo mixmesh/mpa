@@ -14,7 +14,7 @@ static int big_mont_mul_fips(UINT_T* a, UINT_T* b, UINT_T* np, UINT_T* n,
     int i;
 
     for(i=0; i < s; i++) {
-	int j;    
+	int j;
 	for (j=0; j < i; j++) {
 	    mula(a[j],b[i-j],t[0],&C,&S);
 	    big_addc(t, 1, C);
@@ -39,7 +39,7 @@ static int big_mont_mul_fips(UINT_T* a, UINT_T* b, UINT_T* np, UINT_T* n,
 	m[i-s] = t[0];
 	shr3(t);
     }
-    return s+1;
+    return s;
 }
 
 #endif

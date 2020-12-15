@@ -9,7 +9,6 @@
          probab_prime_p/2]).
 -export([big_powm/3]).
 -export([big_size/1, big_bits/1]).
--export([big_mont_redc/4, big_mont_redc/2]).
 -export([big_mont_mul/5, big_mont_mul/3]).
 -export([big_mont_sqr/4, big_mont_sqr/2]).
 -export([big_mont_pow/6, big_mont_pow/3]).
@@ -17,12 +16,12 @@
 -export([to_mont/2, from_mont/2]).
 -export([to_mont/3, from_mont/3]).
 %% test
--export([test1/0, test2/0, test3/0, test4/0]).
--export([test11/0, test12/0, test13/0, test14/0]).
--export([test21/0, test22/0, test23/0, test24/0, test25/0]).
--export([test1/1, test2/1, test3/1, test4/1]).
--export([test11/1, test12/1, test13/1, test14/1]).
--export([test21/1, test22/1, test23/1, test24/1, test25/1]).
+-export([test1/0, test3/0, test4/0]).
+-export([test11/0, test13/0, test14/0]).
+-export([test21/0, test23/0, test24/0, test25/0]).
+-export([test1/1, test3/1, test4/1]).
+-export([test11/1, test13/1, test14/1]).
+-export([test21/1, test23/1, test24/1, test25/1]).
 
 
 -export([mont_pow/4, mont_mul/4, mont_sqr/3]).
@@ -30,15 +29,13 @@
 -export([test_mul_random/2, test_mul_random/3]).
 -export([test_pow_random/2, test_pow_random/3]).
 
--type mont_meth() :: default | 
-		     sos | sps |
-		     cios | fips | fios | cihs.
+-type mont_meth() :: sos | sps | cios | fips | fios | cihs.
 -type unsigned() :: non_neg_integer().
 
--define(defmeth, default).
--define(allmeth, [default,sos,sps,cios,fips,fios,cihs]).
+-define(defmeth, sos).
+-define(allmeth, [sos,sps,cios,fips,fios,cihs]).
 -define(imeth, [cios,fips,fios,cihs]).  %% integrated
--define(smeth, [default,sos,sps]).      %% separate
+-define(smeth, [sos,sps]).      %% separate
 
 -record(mont,
 	{
@@ -103,11 +100,6 @@ big_powm(Base, Exp, Mod) ->
 
 big_size(X) -> gmp_nif:big_size(X).
 big_bits(X) -> gmp_nif:big_bits(X).
-
-big_mont_redc(T, #mont{meth=Meth,n=N,np=Np}) ->
-    big_mont_redc(Meth,T,N,Np).
-big_mont_redc(Meth,T,N,Np) ->
-    gmp_nif:big_mont_redc(Meth,T, N, Np).
 
 big_mont_mul(A, B, #mont{meth=Meth,n=N,np=Np}) ->
     big_mont_mul(Meth,A, B, N, Np).
@@ -234,22 +226,6 @@ test1(Meth) when ?is_meth(Meth) ->
     C = 82,
     ok.
 
-test2() ->
-    [test2(M) || M <- ?smeth].
-test2(Meth) when ?is_meth(Meth) ->
-    io:format("test2: ~w\n", [Meth]),
-    P = 101,
-    M = mont(Meth,P),
-    A = 79,
-    Am = to_mont(A, M),
-    B = 33,
-    Bm = to_mont(B, M),
-    Rm = big_mont_redc(Am*Bm, M),
-    C = from_mont(Rm, M),
-    C = (A*B) rem P,
-    C = 82,
-    ok.    
-
 test3() ->
     [test3(M) || M <- ?allmeth].
 test3(Meth) when ?is_meth(Meth) ->
@@ -297,21 +273,6 @@ test11(Meth) when ?is_meth(Meth) ->
     C = 3060820620989551345058379044987056313,
     ok.
 
-test12() ->
-    [test12(M) || M <- ?smeth].
-test12(Meth) when ?is_meth(Meth) ->
-    io:format("test12: ~w\n", [Meth]),
-    P = 1262773213764120865151395821008507246189,
-    M = mont(Meth,P),
-    A = 2209866513432185383910552416615,
-    Am = to_mont(A, M),
-    B = 1491922486076647757424410593223,
-    Bm = to_mont(B, M),
-    Rm = big_mont_redc(Am*Bm, M),
-    C = from_mont(Rm, M),
-    C = (A*B) rem P,
-    ok.    
-
 test13() ->
     [test13(M) || M <- ?allmeth].
 test13(Meth) when ?is_meth(Meth) ->
@@ -357,20 +318,6 @@ test21(Meth) when ?is_meth(Meth) ->
     C = from_mont(Rm, M),
     C = (A*B) rem ?P,
     ok.
-
-test22() ->
-    [test22(M) || M <- ?smeth].
-test22(Meth) when ?is_meth(Meth) ->
-    io:format("test22: ~w\n", [Meth]),
-    M = mont(Meth,?P),
-    A = 129015633621243001913449155039089342460245014035423996408293170177875331730667287169606301577788634719390344399495012523585332459829150811854319143390944179836371880331297042928788452376675529244126810320465199234812830335213501532015809681469166815018523250762130729029190848536853958461583303676087231435574,
-    Am = to_mont(A, M),
-    B = 124060833865307543493568060615888984483974452188008593376614358923889775329311551928017371949352869174793233582962966084426368046363097562383329228081040634647665584981130599395343295428306766898340404601804058174196606881036706450931509901449845820591347944486874994264576959961749516461160241513031362543684,
-    Bm = to_mont(B, M),
-    Rm = big_mont_redc(Am*Bm, M),
-    C = from_mont(Rm, M),
-    C = (A*B) rem ?P,
-    ok.    
 
 test23() ->
     [test23(M) || M <- ?defmeth].
