@@ -2,7 +2,7 @@
 ERL=$(shell readlink -f `which erl`)
 ERL_TOP=$(ERL:%/bin/erl=%)
 OS=$(shell uname -s)
-CFLAGS=-MMD -MF .$<.d -I$(ERL_TOP)/usr/include
+CFLAGS=-MMD -MP -MF .$<.d -I$(ERL_TOP)/usr/include
 #@END-C_SRC-DEFAULT-RULES@
 
 CFLAGS+=-finline-functions -std=c99 -Wall -O3 # -DDEBUG
@@ -18,6 +18,8 @@ all: ../priv/gmp_nif.so
 
 %.o:	%.c
 	$(CC) $(CFLAGS) -c -fPIC $<
+
+.%.d:	;
 
 -include .*.d
 

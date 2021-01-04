@@ -50,6 +50,8 @@ extern int enif_inspect_big(ErlNifEnv* env,ERL_NIF_TERM big_term,ErlNifBignum* b
 extern ERL_NIF_TERM enif_make_number(ErlNifEnv* env, ErlNifBignum* big);
 
 extern int enif_get_number(ErlNifEnv* env, ERL_NIF_TERM t, ErlNifBignum* big);
+extern int enif_get_number_ds(ErlNifEnv* env, ERL_NIF_TERM t, ErlNifBignum* big,
+			      ErlNifBigDigit* ds, int s);
 extern int enif_copy_number(ErlNifEnv* env, ErlNifBignum* big, size_t min_size);
 extern void enif_release_number(ErlNifEnv* env, ErlNifBignum* big);
 extern int enif_get_copy_number(ErlNifEnv* env, ERL_NIF_TERM t, 

@@ -30,6 +30,54 @@
 #define _header_arity(x)	((x) >> _HEADER_ARITY_OFFS)
 
 
+// copy sl, or at most dl bytes, from src to dst
+// return -1 if not all byte where copied
+int enif_digits_copy(ErlNifBigDigit* dst, int dl, ErlNifBigDigit* src, int sl)
+{
+    int i;
+    int n = (sl > dl) ? dl : sl;
+    for (i = 0; i < n; i++)
+	dst[i] = src[i];
+    return (sl > dl) ? -1 : sl;
+}
+
+int enif_digits_small(ErlNifBigDigit* x, ErlNifBigDigit d)
+{
+    x[0] = d;
+    return 1;
+}
+
+void enif_digits_zero(ErlNifBigDigit* dst, int n)
+{
+    int i;
+    for (i = 0; i < n; i++)
+	dst[i] = 0;
+}
+
+// #define USE_MEMCPY
+// #define USE_MEMSET
+
+// copy and zero pad MSB or truncate if needed
+int enif_digits_copyz(ErlNifBigDigit* dst, int dl, ErlNifBigDigit* src, int sl)
+{
+    int i;
+    int n = (sl > dl) ? dl : sl;
+
+#ifdef USE_MEMCPY
+    memcpy(dst, src, n*sizeof(ErlNifBigDigit));
+#else
+    for (i = 0; i < n; i++) dst[i] = src[i];
+#endif
+    if (sl > dl)
+	return -1;  // truncated
+#ifdef USE_MEMSET
+    memset(dst+i, 0, (dl-sl)*sizeof(ErlNifBigDigit));
+#else
+    for (i = n; i < dl; i++) dst[i] = 0;
+#endif
+    return dl;
+}
+
 int enif_is_big(ErlNifEnv* env, ERL_NIF_TERM big_term)
 {
     return is_big(big_term);
@@ -100,6 +148,24 @@ int enif_get_number(ErlNifEnv* env, ERL_NIF_TERM t, ErlNifBignum* big)
 	}
     }
     return 0;
+}
+
+// get number with fixed number of digits, set MSB to zero if needed
+// if big->size == s then the digits are not touched or patched
+// if big->size < s then ds digits are used
+int enif_get_number_ds(ErlNifEnv* env, ERL_NIF_TERM t,
+		       ErlNifBignum* big, ErlNifBigDigit* ds, int s)
+{
+    if (!enif_get_number(env, t, big))
+	return 0;
+    if (big->size > s)
+	return 0;
+    if (big->size < s) {
+	enif_digits_copyz(ds, s, big->digits, big->size);
+	big->digits = ds;
+	big->size = s;
+    }
+    return 1;
 }
 
 // Copy a bignum to a "safe" location, allow modifications of big num digits

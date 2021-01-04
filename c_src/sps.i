@@ -4,7 +4,6 @@
 
 #include "big3.i"
 
-// P[2s] is product A[s]*B[s] result is placed in Z[2s]
 static int big_mont_redc_sps(UINT_T* P,UINT_T* n,UINT_T* np,UINT_T* r,int s)
 {
     UINT_T u[3];
@@ -35,29 +34,18 @@ static int big_mont_redc_sps(UINT_T* P,UINT_T* n,UINT_T* np,UINT_T* r,int s)
     add31(u,P[2*s-1],u);
     r[s-1] = u[0];
     r[s] = u[1];
-    i = s;
-    while(i && (r[i]==0)) i--;
-    return big_norm0(r, i+1, n, s);
+    return s+1;
 }
 
+// product A[s]*B[s] result is placed in r[2s] at least 2s digits
+// needed during calculations
 static int big_mont_mul_sps(UINT_T* a, UINT_T* b, UINT_T* np, UINT_T* n,
 			    UINT_T* r,int s)
 {
-    int i;    
     UINT_T P[2*s];
 
     big_zero(P, BIGNUM_SIZE(P));
-    for (i = 0; i < s; i++) {
-	UINT_T cp = 0;
-	UINT_T c = 0;
-	int j, ij;
-	for (j = 0, ij=i; (j < s); j++, ij++) {
-	    UINT_T p0;
-	    mula(a[i],b[j],cp,&cp,&p0);
-	    addc(p0,P[ij],c,&c,&P[ij]);
-	}
-	P[ij] = c + cp;
-    }
+    big_n_mul(a, b, P, s);
     return big_mont_redc_sps(P, n, np, r, s);
 }
 

@@ -601,37 +601,6 @@ static ERL_NIF_TERM _big_bits(ErlNifEnv* env, int argc,
 }
 
 
-// copy and zero pad MSB or truncate if needed
-static int copyz(ErlNifBigDigit* dst, int dl,
-		 ErlNifBigDigit* src, int sl)
-{
-    if (sl <= dl) {
-	memcpy(dst, src, sl*sizeof(ErlNifBigDigit));
-	memset(dst+sl, 0, (dl-sl)*sizeof(ErlNifBigDigit));
-	return dl;
-    }
-    else {
-	memcpy(dst, src, dl*sizeof(ErlNifBigDigit));
-	return -1;
-    }
-}
-
-
-static int get_number_ds(ErlNifEnv* env, ERL_NIF_TERM t,
-			 ErlNifBignum* big, ErlNifBigDigit* ds, int s)
-{
-    if (!enif_get_number(env, t, big))
-	return 0;
-    if (big->size > s)
-	return 0;
-    if (big->size < s) {
-	copyz(ds, s, big->digits, big->size);
-	big->digits = ds;
-	big->size = s;
-    }
-    return 1;
-}
-
 static int get_redc_type(ErlNifEnv* env, ERL_NIF_TERM arg, redc_type_t* type)
 {
     if (arg == enif_make_atom(env, "sos"))
@@ -669,15 +638,15 @@ static ERL_NIF_TERM _big_mont_mul(ErlNifEnv* env, int argc,
 	int s = n.size;
 	int rl;	
 	ErlNifBignum r;
-	ErlNifBigDigit rs[2*s+1];
+	ErlNifBigDigit rs[2*s+2];
 	ErlNifBignum a;
 	ErlNifBignum b;
 	ErlNifBigDigit as[s];
 	ErlNifBigDigit bs[s];
     
-	if (!get_number_ds(env, argv[1], &a, as, s))
+	if (!enif_get_number_ds(env, argv[1], &a, as, s))
 	    return enif_make_badarg(env);
-	if (!get_number_ds(env, argv[2], &b, bs, s))
+	if (!enif_get_number_ds(env, argv[2], &b, bs, s))
 	    return enif_make_badarg(env);
 
 	rl = big_mont_mul(redc_type,a.digits,b.digits,n.digits,np.digits,rs,s);
@@ -710,11 +679,11 @@ static ERL_NIF_TERM _big_mont_sqr(ErlNifEnv* env, int argc,
 	int s = n.size;
 	int rl;
 	ErlNifBignum r;
-	ErlNifBigDigit rs[2*s+1];
+	ErlNifBigDigit rs[2*s+2];
 	ErlNifBignum a;
 	ErlNifBigDigit as[s];
 
-	if (!get_number_ds(env, argv[1], &a, as, s))
+	if (!enif_get_number_ds(env, argv[1], &a, as, s))
 	    return enif_make_badarg(env);
 	rl = big_mont_sqr(redc_type, a.digits, n.digits, np.digits, rs, s);
 	if (rl < 0)
@@ -751,12 +720,12 @@ static ERL_NIF_TERM _big_mont_pow(ErlNifEnv* env, int argc,
 	ErlNifBignum p;
 	ErlNifBigDigit ps[s];
 	ErlNifBignum r;
-	ErlNifBigDigit rs[2*s+1];
+	ErlNifBigDigit rs[2*s+2];
 	int rl;
 
-	if (!get_number_ds(env, argv[3], &p, ps, s))
+	if (!enif_get_number_ds(env, argv[3], &p, ps, s))
 	    return enif_make_badarg(env);
-	if (!get_number_ds(env, argv[1], &a, as, s))
+	if (!enif_get_number_ds(env, argv[1], &a, as, s))
 	    return enif_make_badarg(env);
 
 	rl = big_mont_pow(redc_type,
