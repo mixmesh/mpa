@@ -236,7 +236,7 @@ test3(Meth) when ?is_meth(Meth) ->
     Am = to_mont(A, M),
     B = 33,
     Bm = to_mont(B, M),
-    io:format("Am=~w, Bm=~w\n", [Am, Bm]),
+    io:format("P=~w, A=~w,Am=~w, B=~w,Bm=~w\n", [P,A,Am,B,Bm]),
     Rm = big_mont_mul(Am, Bm, M),
     C = from_mont(Rm, M),
     C = (A*B) rem P,

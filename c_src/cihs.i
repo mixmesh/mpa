@@ -12,7 +12,7 @@ static int big_mont_mul_cihs(UINT_T* a, UINT_T* b, UINT_T* np, UINT_T* n,
     for(i=0; i<s;i++) {
 	int j;
 	C = 0;
-	for(j=0; j<s; j++) {
+	for(j=0; j<s-i; j++) {
 	    mulab(a[j],b[i],r[i+j],C,&C,&S);
 	    r[i+j] = S;
 	}

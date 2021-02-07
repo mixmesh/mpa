@@ -12,7 +12,7 @@ static int big_mont_redc_sps(UINT_T* P,UINT_T* n,UINT_T* np,UINT_T* r,int s)
 
     zero3(u);
     for (i = 0; i < s; i++) {
-	for (j = 0; j < i-1; j++) {
+	for (j = 0; j < i; j++) {
 	    mul(r[j],n[i-j],&p[1],&p[0]);
 	    add32(u,p,u);
 	}
@@ -22,8 +22,8 @@ static int big_mont_redc_sps(UINT_T* P,UINT_T* n,UINT_T* np,UINT_T* r,int s)
 	add32(u,p,u);
 	shr3(u);
     }
-    for (i = s; i < 2*(s-1); i++) {
-	for (j = i-s+1; j < s-1; j++) {
+    for (i = s; i < 2*s-1; i++) {
+	for (j = i-s+1; j < s; j++) {
 	    mul(r[j],n[i-j],&p[1],&p[0]);
 	    add32(u,p,u);
 	}

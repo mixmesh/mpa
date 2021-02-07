@@ -27,7 +27,7 @@ static int big_mont_mul_fios(UINT_T* a, UINT_T* b, UINT_T* np, UINT_T* n,
 	r[s] = r[s+1] + C;
 	r[s+1] = 0;
     }
-    return s+2;
+    return s+1;
 }
 
 #endif
