@@ -2,7 +2,7 @@
 #ifndef __FIOS_I__
 #define __FIOS_I__
 
-// a[s], b[s], r[s+3]!
+// a[s], b[s], r[s+2]!
 static int big_mont_mul_fios(UINT_T* a, UINT_T* b, UINT_T* np, UINT_T* n,
 			     UINT_T* r,int s)
 {
@@ -14,13 +14,13 @@ static int big_mont_mul_fios(UINT_T* a, UINT_T* b, UINT_T* np, UINT_T* n,
 	int j;
 
 	mula(a[0], b[i], r[0], &C, &S);
-	big_addc(r, 1, C);
+	big_addc(r, 1, s+2, C);
 	mul0(S, np[0], &m);
 	mula(m, n[0], S, &C, &S);
 
 	for (j = 1; j < s; j++) {
 	    mulab(a[j],b[i],r[j],C,&C,&S);
-	    big_addc(r, j+1, C);
+	    big_addc(r, j+1, s+2, C);
 	    mula(m, n[j], S, &C, &r[j-1]);
 	}
 	add(r[s], C, &C, &r[s-1]);

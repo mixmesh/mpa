@@ -2,7 +2,7 @@
 #ifndef __SOS_I
 #define __SOS_I
 
-// note that P is destructivly updated
+// note that P is destructivly updated (but kept as local array)
 static int big_mont_redc_sos(UINT_T* P, UINT_T* n, UINT_T* np, UINT_T* r, int s)
 {
     int i, j;
@@ -28,6 +28,7 @@ static int big_mont_redc_sos(UINT_T* P, UINT_T* n, UINT_T* np, UINT_T* r, int s)
     return s+1;
 }
 
+// a[s], b[s], r[s+1]
 static int big_mont_mul_sos(UINT_T* a, UINT_T* b, UINT_T* np, UINT_T* n,
 			    UINT_T* r,int s)
 {

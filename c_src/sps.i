@@ -36,9 +36,9 @@ static int big_mont_redc_sps(UINT_T* P,UINT_T* n,UINT_T* np,UINT_T* r,int s)
     r[s] = u[1];
     return s+1;
 }
-
-// product A[s]*B[s] result is placed in r[2s] at least 2s digits
-// needed during calculations
+//
+// a[s], b[s] r[s+1]
+// product a[s]*b[s] result is placed in r[s+1] 
 static int big_mont_mul_sps(UINT_T* a, UINT_T* b, UINT_T* np, UINT_T* n,
 			    UINT_T* r,int s)
 {

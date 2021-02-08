@@ -2,6 +2,7 @@
 #ifndef __CIHS_I__
 #define __CIHS_I__
 
+// a[s], b[s], r[s+2]
 static int big_mont_mul_cihs(UINT_T* a, UINT_T* b, UINT_T* np, UINT_T* n,
 			     UINT_T* r, int s)
 {
@@ -42,6 +43,11 @@ static int big_mont_mul_cihs(UINT_T* a, UINT_T* b, UINT_T* np, UINT_T* n,
 	    r[s+1] = C;
 	}
     }
+//    printf("r[s-1] = %lu\r\n", r[s-1]);
+//    printf("t[s] = %lu\r\n", r[s]);
+//    printf("t[s+1] = %lu\r\n", r[s+1]);
+//    printf("S = %lu\r\n", S);
+//    printf("C = %lu\r\n", C);    
     return s+1;
 }
 

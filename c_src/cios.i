@@ -2,7 +2,7 @@
 #ifndef __CIOS_I__
 #define __CIOS_I__
 
-// a[s], b[s], r[s+2]!
+// a[s], b[s], r[s+2]
 static int big_mont_mul_cios(UINT_T* a, UINT_T* b, UINT_T* np, UINT_T* n,
 			     UINT_T* r, int s)
 {

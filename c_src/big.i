@@ -73,9 +73,9 @@ static int big_gt(UINT_T* x, int xl, UINT_T* y, int yl)
     return big_comp(x, xl, y, yl) > 0;
 }
 
-static int big_addc(UINT_T* t, int i, UINT_T c)
+static int big_addc(UINT_T* t, int i, int n, UINT_T c)
 {
-    while(c) {
+    while(c && (i < n)) {
 	addc(t[i],0,c,&c,&t[i]);
 	i++;
     }

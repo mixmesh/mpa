@@ -1,4 +1,4 @@
-
+#include <memory.h>
 #include "erl_nif_big.h"
 
 #define TAG_PRIMARY_HEADER	0x0
@@ -52,30 +52,6 @@ void enif_digits_zero(ErlNifBigDigit* dst, int n)
     int i;
     for (i = 0; i < n; i++)
 	dst[i] = 0;
-}
-
-// #define USE_MEMCPY
-// #define USE_MEMSET
-
-// copy and zero pad MSB or truncate if needed
-int enif_digits_copyz(ErlNifBigDigit* dst, int dl, ErlNifBigDigit* src, int sl)
-{
-    int i;
-    int n = (sl > dl) ? dl : sl;
-
-#ifdef USE_MEMCPY
-    memcpy(dst, src, n*sizeof(ErlNifBigDigit));
-#else
-    for (i = 0; i < n; i++) dst[i] = src[i];
-#endif
-    if (sl > dl)
-	return -1;  // truncated
-#ifdef USE_MEMSET
-    memset(dst+i, 0, (dl-sl)*sizeof(ErlNifBigDigit));
-#else
-    for (i = n; i < dl; i++) dst[i] = 0;
-#endif
-    return dl;
 }
 
 int enif_is_big(ErlNifEnv* env, ERL_NIF_TERM big_term)
@@ -152,16 +128,18 @@ int enif_get_number(ErlNifEnv* env, ERL_NIF_TERM t, ErlNifBignum* big)
 
 // get number with fixed number of digits, set MSB to zero if needed
 // if big->size == s then the digits are not touched or patched
-// if big->size < s then ds digits are used
+// if big->size < s then the ds digits are used
 int enif_get_number_ds(ErlNifEnv* env, ERL_NIF_TERM t,
 		       ErlNifBignum* big, ErlNifBigDigit* ds, int s)
 {
+    int n;
     if (!enif_get_number(env, t, big))
 	return 0;
     if (big->size > s)
 	return 0;
-    if (big->size < s) {
-	enif_digits_copyz(ds, s, big->digits, big->size);
+    if ((n=big->size) < s) {
+	memcpy(ds, big->digits, n*sizeof(ErlNifBigDigit));
+	memset(ds+n, 0, (s-n)*sizeof(ErlNifBigDigit));
 	big->digits = ds;
 	big->size = s;
     }

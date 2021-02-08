@@ -638,7 +638,7 @@ static ERL_NIF_TERM _big_mont_mul(ErlNifEnv* env, int argc,
 	int s = n.size;
 	int rl;	
 	ErlNifBignum r;
-	ErlNifBigDigit rs[2*s+2];
+	ErlNifBigDigit rs[s+2];
 	ErlNifBignum a;
 	ErlNifBignum b;
 	ErlNifBigDigit as[s];
@@ -679,7 +679,7 @@ static ERL_NIF_TERM _big_mont_sqr(ErlNifEnv* env, int argc,
 	int s = n.size;
 	int rl;
 	ErlNifBignum r;
-	ErlNifBigDigit rs[2*s+2];
+	ErlNifBigDigit rs[s+2];
 	ErlNifBignum a;
 	ErlNifBigDigit as[s];
 
@@ -720,7 +720,7 @@ static ERL_NIF_TERM _big_mont_pow(ErlNifEnv* env, int argc,
 	ErlNifBignum p;
 	ErlNifBigDigit ps[s];
 	ErlNifBignum r;
-	ErlNifBigDigit rs[2*s+2];
+	ErlNifBigDigit rs[s+2];
 	int rl;
 
 	if (!enif_get_number_ds(env, argv[3], &p, ps, s))
