@@ -9,6 +9,7 @@
          probab_prime_p/2]).
 -export([big_powm/3]).
 -export([big_size/1, big_bits/1]).
+-export([big_mod2_sqr/2]).
 -export([big_mont_mul/5, big_mont_mul/3]).
 -export([big_mont_sqr/4, big_mont_sqr/2]).
 -export([big_mont_pow/6, big_mont_pow/3]).
@@ -103,6 +104,9 @@ big_powm(Base, Exp, Mod) ->
 
 big_size(X) -> gmp_nif:big_size(X).
 big_bits(X) -> gmp_nif:big_bits(X).
+
+big_mod2_sqr(A, K) -> gmp_nif:big_mod2_sqr(A, K).
+    
 
 big_mont_mul(A, B, #mont{meth=Meth,n=N,np=Np}) ->
     big_mont_mul(Meth,A, B, N, Np).

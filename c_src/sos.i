@@ -33,10 +33,22 @@ static int big_mont_mul_sos(UINT_T* a, UINT_T* b, UINT_T* np, UINT_T* n,
 			    UINT_T* r,int s)
 {
     UINT_T P[2*s];
-
     big_zero(P, BIGNUM_SIZE(P));
     big_n_mul(a, b, P, s);
     return big_mont_redc_sos(P, n, np, r, s);
 }
+
+static int big_mont_sqr_sos(UINT_T* a, UINT_T* np, UINT_T* n,
+			    UINT_T* r,int s)
+{
+    UINT_T P[2*s];
+    
+    big_zero(P, BIGNUM_SIZE(P));
+    big_n_sqr(a, P, s);
+    // big_n_mul(a,a,P,s);
+    BIGPRINT0("%sa^2,P=", P, 2*s, "");
+    return big_mont_redc_sos(P, n, np, r, s);    
+}
+
 
 #endif

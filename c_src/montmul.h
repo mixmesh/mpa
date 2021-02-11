@@ -29,5 +29,7 @@ extern int big_mont_pow(redc_type_t redc_type,
 			UINT_T* a,
 			UINT_T* e, int el,
 			UINT_T* p, UINT_T* n, UINT_T* np, UINT_T* r, int s);
+// test
+extern int big_mod2_sqr(UINT_T* a, UINT_T* r, int s);
 
 #endif

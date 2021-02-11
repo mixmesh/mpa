@@ -137,6 +137,14 @@ static int big_subb(UINT_T* x, UINT_T* y, UINT_T* r, int s)
     return B;
 }
 
+// trim MSB=0
+static INLINE int big_trim(UINT_T* x, int xl)
+{
+    while((xl>1) && (x[xl-1]==0))
+	xl--;
+    return xl;
+}
+
 //
 // if (X > N) X = X - N
 //  
@@ -185,8 +193,8 @@ static INLINE int big_mul_k(UINT_T* x, int xl,
 
 // multiply x[n] and y[n] produce result r[2n]
 // the result of x[n]*y[n] is added to r[2n] so it must be
-// set to zero before calling big_n_mul, unless the some constant
-// is added ofcourse
+// set to zero before calling big_n_mul, unless intensional
+//
 static INLINE void big_n_mul(UINT_T* x, UINT_T* y, UINT_T* r, int n)
 {
     int i;
@@ -224,17 +232,17 @@ static INLINE int big_mul(UINT_T* x, int xl,
 	return i+1;
 }
 
-// x[n]  r[2n+2]
-static INLINE int big_n_sqr(UINT_T* x, UINT_T* r, int s)
+// x[s]  r[2n]
+static INLINE int big_n_sqr(UINT_T* x, UINT_T* r, int n)
 {
     int i;
-
-    for (i = 0; i < s; i++) {
+    for (i = 0; i < n; i++) {
 	UINT_T c[3];
+	UINT_T C;
 	int j;
 	zero3(c);
 	sqra(x[i], r[i+i], &c[0], &r[i+i]);
-	for (j = i+1; j < s; j++) {
+	for (j = i+1; j < n; j++) {
 	    UINT_T b[2];
 	    mul(x[i],x[j],&b[1],&b[0]);   // (b1,b0) = xi*xj
 	    add32(c, b, c);               // (c2,c1,c0) += (b1,b0)
@@ -243,13 +251,11 @@ static INLINE int big_n_sqr(UINT_T* x, UINT_T* r, int s)
 	    r[i+j] = c[0];
 	    shr3(c);
 	}
-	r[i+s] = c[1];
-	r[i+s+1] = c[2];
+	add(r[i+n], c[0], &C, &r[i+n]);
+	addc(r[i+n+1], c[1], C, &C, &r[i+n+1]);
     }
-    assert(r[s+s+1] == 0);
-    return s+s;
+    return n+n;
 }
-
 
 static INLINE int big_sqr(UINT_T* x, int xl,
 			  UINT_T* r, int szr)

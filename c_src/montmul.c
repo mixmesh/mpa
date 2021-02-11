@@ -63,8 +63,7 @@ void big_print(UINT_T* x, int xl)
 
 int big_mont_norm(UINT_T* r, int rl, UINT_T* n, int nl)
 {
-    while((rl>1) && (r[rl-1]==0))
-	rl--;
+    rl = big_trim(r, rl);
     return big_norm0(r, rl, n, nl);
 }
 
@@ -103,7 +102,7 @@ int big_mont_mul(redc_type_t redc_type, UINT_T* a, UINT_T* b,
     default:
 	return -1;
     }
-    BIGPRINT1("%sa*b=", r, rl, "");
+    BIGPRINT0("%sa*b=", r, rl, "");
     rl = big_mont_norm(r, rl, n, s);
     BIGPRINT0("%sa*b'=", r, rl, "");
     return rl;
@@ -118,26 +117,26 @@ int big_mont_sqr(redc_type_t redc_type,
     BIGPRINT0("%sa=", a, s, "");
     switch(redc_type) {
     case REDC_SOS:
-	rl = big_mont_mul_sos(a, a, np, n, r, s);
+	rl = big_mont_sqr_sos(a, np, n, r, s);
 	break;
     case REDC_SPS:
-	rl = big_mont_mul_sps(a, a, np, n, r, s);
+	rl = big_mont_sqr_sps(a, np, n, r, s);
 	break;
     case REDC_CIOS:
 	big_zero(r, s+1);
-	rl = big_mont_mul_cios(a, a, np, n, r, s);
+	rl = big_mont_sqr_cios(a, np, n, r, s);
 	break;
     case REDC_FIPS:
 	big_zero(r, s+1);
-	rl = big_mont_mul_fips(a, a, np, n, r, s);
+	rl = big_mont_sqr_fips(a, np, n, r, s);
 	break;
     case REDC_FIOS:
 	big_zero(r, s+2);
-	rl = big_mont_mul_fios(a, a, np, n, r, s);
+	rl = big_mont_sqr_fios(a, np, n, r, s);
 	break;
     case REDC_CIHS:
 	big_zero(r, s+2);
-	rl = big_mont_mul_cihs(a, a, np, n, r, s);
+	rl = big_mont_sqr_cihs(a, np, n, r, s);
 	break;
     default:
 	return -1;
@@ -146,6 +145,16 @@ int big_mont_sqr(redc_type_t redc_type,
     rl = big_mont_norm(r, rl, n, s);
     BIGPRINT0("%sa^2'=", r, rl, "");
     return rl;
+}
+
+// test function
+// a[s] r[2s]
+int big_mod2_sqr(UINT_T* a, UINT_T* r, int s)
+{
+    int rl;
+    big_zero(r, 2*s);
+    rl = big_n_sqr(a, r, s);
+    return big_trim(r, rl);
 }
 
 

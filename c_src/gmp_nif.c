@@ -741,6 +741,43 @@ static ERL_NIF_TERM _big_mont_pow(ErlNifEnv* env, int argc,
     }
 }
 
+// args big_n_sqr(a, k) -> (a*a) mod 2^k
+static ERL_NIF_TERM _big_mod2_sqr(ErlNifEnv* env, int argc,
+				  const ERL_NIF_TERM argv[])
+{
+    ErlNifBignum a;
+    uint64_t k;
+    int s;
+    int t;
+    
+    if (!enif_get_uint64(env, argv[1], &k))
+	return enif_make_badarg(env);
+
+    // s is number of bignum digits needed for result
+    s = (k+(8*sizeof(UINT_T))-1) / (8*sizeof(UINT_T));
+    // t number of bits used in last digit
+    t = k % (8*sizeof(UINT_T));
+    {
+	int rl;
+	ErlNifBignum r;	
+	ErlNifBigDigit as[s];
+	ErlNifBigDigit rs[2*s];
+	
+	if (!enif_get_number_ds(env, argv[0], &a, as, s))
+	    return enif_make_badarg(env);
+	rl = big_mod2_sqr(a.digits, rs, s);
+	if (rl < 0)
+	    return enif_make_badarg(env);
+	// may have to clear some unused msb bits
+	if (t > 0)
+	    rs[s-1] &= (((UINT_T)-1) >> (8*sizeof(UINT_T) - t));
+	r.size = s;
+	r.sign = 0;
+	r.digits = rs;
+	return enif_make_number(env, &r);	
+    }
+}
+
 
 static ErlNifFunc nif_funcs[] = {
   {"dlog", 3, _dlog, ERL_NIF_DIRTY_JOB_CPU_BOUND},
@@ -756,7 +793,8 @@ static ErlNifFunc nif_funcs[] = {
   {"big_powm", 3, _big_powm},
   {"big_mont_mul", 5, _big_mont_mul},
   {"big_mont_sqr", 4, _big_mont_sqr},
-  {"big_mont_pow", 6, _big_mont_pow},  
+  {"big_mont_pow", 6, _big_mont_pow},
+  {"big_mod2_sqr", 2, _big_mod2_sqr},
 };
 
 static int load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info) {

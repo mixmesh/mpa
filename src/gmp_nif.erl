@@ -8,6 +8,7 @@
 -export([big_mont_mul/5]).
 -export([big_mont_sqr/4]).
 -export([big_mont_pow/6]).
+-export([big_mod2_sqr/2]).
 -on_load(init/0).
 
 %% Exported: init
@@ -76,4 +77,5 @@ big_mont_sqr(_Type,_A, _N, _Np) ->
 big_mont_pow(_Type,_A, _E, _P, _N, _Np) ->
     exit(nif_library_not_loaded).
 
-
+big_mod2_sqr(_A, _K) ->
+    exit(nif_library_not_loaded).

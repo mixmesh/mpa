@@ -46,12 +46,14 @@ static int big_mont_mul_fips(UINT_T* a, UINT_T* b, UINT_T* np, UINT_T* n,
 	r[i-s] = t[0];
 	shr4(t);
     }
-//    printf("t[0] = %lu\r\n", t[0]);
-//    printf("t[1] = %lu\r\n", t[1]);
-//    printf("t[2] = %lu\r\n", t[2]);
-//    printf("t[3] = %lu\r\n", t[3]);
     r[s] = t[0];
     return s+1;
+}
+
+static int big_mont_sqr_fips(UINT_T* a, UINT_T* np, UINT_T* n,
+			     UINT_T* r, int s)
+{
+    return big_mont_mul_fips(a, a, np, n, r, s);
 }
 
 #endif
