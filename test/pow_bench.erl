@@ -25,7 +25,7 @@ pow_3() ->
 pow_4() ->
     benchmark:run(fun (X) -> mpz:big_powm(?G, X, ?P) end, [?X]).
 
-pow_5() -> pow_5(default).
+pow_5() -> pow_5(sos).
     
 pow_5(Type) ->
     Mp = mpz:mont(Type,?P),
@@ -34,10 +34,10 @@ pow_5(Type) ->
 
 %% special!
 pow_5_bench() ->
-    pow_5_bench(default).
+    pow_5_bench(sos).
 
 pow_5_bench(Type) ->
-    pow_5_bench(Type,1000).
+    pow_5_bench(Type,10000).
 pow_5_bench(Type,Laps) ->
     Mp = mpz:mont(Type,?P),    
     Gh = mpz:to_mont(?G, Mp),

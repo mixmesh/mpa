@@ -35,6 +35,7 @@ static int big_mont_mul_cihs(UINT_T* a, UINT_T* b, UINT_T* np, UINT_T* n,
 	r[s-1] = S;
 	r[s] = r[s+1] + C;
 	r[s+1] = 0;
+	
 	for (j=i+1; j < s; j++) {
 	    mula(b[j], a[s-j+i], r[s-1], &C, &S);
 	    r[s-1] = S;
@@ -43,11 +44,11 @@ static int big_mont_mul_cihs(UINT_T* a, UINT_T* b, UINT_T* np, UINT_T* n,
 	    r[s+1] = C;
 	}
     }
-//    printf("r[s-1] = %lu\r\n", r[s-1]);
-//    printf("t[s] = %lu\r\n", r[s]);
-//    printf("t[s+1] = %lu\r\n", r[s+1]);
-//    printf("S = %lu\r\n", S);
-//    printf("C = %lu\r\n", C);    
+    printf("r[s-1] = %lu\r\n", r[s-1]);
+    printf("t[s] = %lu\r\n", r[s]);
+    printf("t[s+1] = %lu\r\n", r[s+1]);
+    printf("S = %lu\r\n", S);
+    printf("C = %lu\r\n", C);    
     return s+1;
 }
 

@@ -82,7 +82,7 @@ int big_mont_mul(redc_type_t redc_type, UINT_T* a, UINT_T* b,
     case REDC_CIHS:
 	big_zero(r, s+2);
 	rl = big_mont_mul_cihs(a, b, np, n, r, s);
-	// BIGPRINT1("%scihs=", r, rl, "");
+	BIGPRINT1("%scihs=", r, rl, "");
 	break;
     default:
 	return -1;

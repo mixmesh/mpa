@@ -52,9 +52,9 @@
 
 -define(is_odd(P), (((P) band 1) =:= 1)).
 -define(is_meth(M), 
-	(((M)=:=default) orelse ((M)=:=sos) orelse ((M)=:=sps) 
-	 orelse ((M)=:=cios) orelse ((M)=:=fips) orelse ((M)=:=fios)
-	 orelse ((M)=:=cihs))).
+	((((M)=:=sos) orelse ((M)=:=sps)
+	  orelse ((M)=:=cios) orelse ((M)=:=fips) orelse ((M)=:=fios)
+	  orelse ((M)=:=cihs)))).
 
 %% Exported: dlog
 
