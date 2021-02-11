@@ -18,7 +18,7 @@ static int big_mont_mul_cios(UINT_T* a, UINT_T* b, UINT_T* np, UINT_T* n,
 	r[s+1] = C;
 	C = 0;
 	mul0(r[0],np[0],&m);
-	mul1a(m, n[0], r[0], &C);	
+	mul1a(m, n[0], r[0], &C);
 	for(j=1; j<s; j++) {
 	    mulab(m,n[j],r[j],C,&C,&r[j-1]);
 	}

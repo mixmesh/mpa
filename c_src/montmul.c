@@ -39,8 +39,25 @@ void big_print(UINT_T* x, int xl);
 void big_print(UINT_T* x, int xl)
 {
     int i;
-    printf("[%d]{%lu",xl,(unsigned long)x[xl-1]);
-    for (i = xl-2; i >= 0; i--) printf(",%lu", (unsigned long)x[i]);
+    printf("[%d]{\r\n", xl);
+    i = xl;
+    while(i >= 4) {
+	printf("  ");
+	printf("%016lx ", (unsigned long)x[i-1]);
+	printf("%016lx ", (unsigned long)x[i-2]);
+	printf("%016lx ", (unsigned long)x[i-3]);
+	printf("%016lx ", (unsigned long)x[i-4]);
+	i -= 4;
+	printf("\r\n");
+    }
+    if (i >= 1) {
+	printf("  ");
+	while(i >= 1) {
+	    printf("%016lx ", (unsigned long)x[i-1]);
+	    i--;
+	}
+    }
+    printf("\r\n");
     printf("}");
 }
 
@@ -82,13 +99,14 @@ int big_mont_mul(redc_type_t redc_type, UINT_T* a, UINT_T* b,
     case REDC_CIHS:
 	big_zero(r, s+2);
 	rl = big_mont_mul_cihs(a, b, np, n, r, s);
-	BIGPRINT1("%scihs=", r, rl, "");
 	break;
     default:
 	return -1;
     }
-    BIGPRINT0("%sa*b=", r, rl, "");    
-    return big_mont_norm(r, rl, n, s);
+    BIGPRINT1("%sa*b=", r, rl, "");
+    rl = big_mont_norm(r, rl, n, s);
+    BIGPRINT0("%sa*b'=", r, rl, "");
+    return rl;
 }
 
 // al < nl < k
