@@ -9,7 +9,8 @@
 
 -compile(export_all).
 
--define(P, ((1 bsl 1024) - 1093337)).
+-define(P, 1191703890297837857254846218124820162520314254482239260141586246493315566589245659462156276340012962327654624865776671922725912417154643528357403702766406672783187741039499777500937664819366321506835371609274218842538110523885904400885445461904752292635899168049169243216400297218378136654191604761801220538347).
+%% -define(P, ((1 bsl 1024) - 1093337)).
 -define(G, 7).
 -define(X, ((1 bsl 512) div 5)).
 
@@ -33,25 +34,35 @@ pow_5(Type) ->
     benchmark:run(fun (X) -> mpz:big_mont_pow(Gh, X, Mp) end, [?X]).
 
 %% special!
-pow_5_bench() ->
-    pow_5_bench(sos).
+pow_mont() ->
+    pow_mont(sos),
+    pow_mont(sps),
+    pow_mont(cios),
+    pow_mont(fips),
+    pow_mont(fios),
+    pow_mont(cihs),
+    ok.
 
-pow_5_bench(Type) ->
-    pow_5_bench(Type,10000).
-pow_5_bench(Type,Laps) ->
-    Mp = mpz:mont(Type,?P),    
+pow_mont(Type) ->
+    pow_mont(Type,1000).
+
+pow_mont(Type,Laps) ->
+    Mp = mpz:mont(Type,?P),
     Gh = mpz:to_mont(?G, Mp),
-    T0 = erlang:monotonic_time(),    
-    pow_5_loop(Laps, Gh, ?X, Mp),
+    T0 = erlang:monotonic_time(),
+    pow_mont_loop(Laps, Gh, ?X, Mp),
     T1 = erlang:monotonic_time(),
     Time = erlang:convert_time_unit(T1-T0,native,microsecond),
-    [{time,Time},{time_avg,Laps/(Time/1000000)}].
+    TimeS = Time/1000000,
+    PPS = Laps/TimeS,
+    io:format("~s: time=~f,  #pow/s = ~f\n", [Type,TimeS,PPS]),
+    [{time,Time},{time_avg,PPS}].
 
-pow_5_loop(0, _Gh, _X, _Mp) ->
+pow_mont_loop(0, _Gh, _X, _Mp) ->
     ok;
-pow_5_loop(I, Gh, X, Mp) ->
+pow_mont_loop(I, Gh, X, Mp) ->
     mpz:big_mont_pow(Gh, ?X, Mp),
-    pow_5_loop(I-1, Gh, X, Mp).
+    pow_mont_loop(I-1, Gh, X, Mp).
 
 
 

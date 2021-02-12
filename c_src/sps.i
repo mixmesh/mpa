@@ -2,38 +2,39 @@
 #ifndef __SPS_I__
 #define __SPS_I__
 
-#include "big3.i"
+#include "big3r.i"
 
+// P[2s]=0, n[s], np[s], r[s+1]
 static int big_mont_redc_sps(UINT_T* P,UINT_T* n,UINT_T* np,UINT_T* r,int s)
 {
-    UINT_T u[3];  // fixme declare register u0,u1,u2 and macro party!
-    UINT_T p[2];
+    decl3(u);
+    UINT_T p1,p0;
     int i, j;
 
     zero3(u);
     for (i = 0; i < s; i++) {
 	for (j = 0; j < i; j++) {
-	    mul(r[j],n[i-j],&p[1],&p[0]);
-	    add32(u,p,u);
+	    mul(r[j],n[i-j],&p1,&p0);
+	    add32p(u,p1,p0);
 	}
-	add31(u,P[i],u);
-	mul0(u[0], np[0], &r[i]);
-	mul(r[i],n[0],&p[1],&p[0]);
-	add32(u,p,u);
+	add31p(u,P[i]);
+	mul0(elem3(u,0), np[0], &r[i]);
+	mul(r[i],n[0],&p1,&p0);
+	add32p(u,p1,p0);
 	shr3(u);
     }
     for (i = s; i < 2*s-1; i++) {
 	for (j = i-s+1; j < s; j++) {
-	    mul(r[j],n[i-j],&p[1],&p[0]);
-	    add32(u,p,u);
+	    mul(r[j],n[i-j],&p1,&p0);
+	    add32p(u,p1,p0);
 	}
-	add31(u,P[i],u);
-	r[i-s] = u[0];
+	add31p(u,P[i]);
+	r[i-s] = elem3(u,0);
 	shr3(u);
     }
-    add31(u,P[2*s-1],u);
-    r[s-1] = u[0];
-    r[s] = u[1];
+    add31p(u,P[2*s-1]);
+    r[s-1] = elem3(u,0);
+    r[s] = elem3(u,1);
     return s+1;
 }
 //

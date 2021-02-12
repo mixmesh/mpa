@@ -2,49 +2,55 @@
 #ifndef __FIPS_I__
 #define __FIPS_I__
 
-#include "big2.i"
-#include "big3.i"
-#include "big4.i"
+#include "big2r.i"
 
-// a[s], b[s], m[s+2]! (s < W=sizeof(UINT_T)*8)
+// acculmulator size 3 should work to 256 bits (32 bit)
+// log64(64*63*128)  ~ 3
+// log64(64*63*4096)  ~ 4
+// a[s], b[s], m[s+2]!
 static int big_mont_mul_fips(UINT_T* a, UINT_T* b, UINT_T* np, UINT_T* n,
-			     UINT_T* m,int s)
+			     UINT_T* r,int s)
 {
-    UINT_T t[4]; // FIXME: 2+logw(S) S=1024,W=32 => 2+2 = 4!
+    decl2(t);
+    UINT_T ti;
     UINT_T C;
     UINT_T S;
     int i;
 
-    zero4(t);
+    zero2(t);
+    ti = 0;
     for(i=0; i < s; i++) {
 	int j;
 	for (j=0; j < i; j++) {
-	    mula(a[j],b[i-j],t[0],&C,&S);
-	    add31(&t[1], C, &t[1]);
-	    mula(m[j],n[i-j],S,&C,&S);
-	    t[0] = S;
-	    add31(&t[1], C, &t[1]);	    
+	    mula(a[j],b[i-j],ti,&C,&S);
+	    add21p(t, C);
+	    mula(r[j],n[i-j],S,&C,&S);
+	    ti = S;
+	    add21p(t, C);
 	}
-	mula(a[i],b[0],t[0],&C,&S);
-	add31(&t[1], C, &t[1]);
-	mul0(S,np[0],&m[i]);
-	mula(m[i],n[0], S, &C, &S);
-	add31(&t[1], C, &t[1]);	
-	shr4(t);
+	mula(a[i],b[0],ti,&C,&S);
+	add21p(t, C);
+	mul0(S,np[0],&r[i]);
+	mula(r[i],n[0], S, &C, &S);
+	add21p(t, C);
+	ti = elem2(t,0);
+	shr2(t);
     }
 
     for (i=s; i < 2*s; i++) {
 	int j;
 	for (j=i-s+1; j < s; j++) {
-	    mula(a[j],b[i-j],t[0],&C,&S);
-	    add31(&t[1], C, &t[1]);
-	    mula(m[j],n[i-j],S,&C,&S);
-	    t[0] = S;
-	    add31(&t[1], C, &t[1]);
+	    mula(a[j],b[i-j],ti,&C,&S);
+	    add21p(t, C);
+	    mula(r[j],n[i-j],S,&C,&S);
+	    ti = S;
+	    add21p(t, C);
 	}
-	m[i-s] = t[0];
-	shr4(t);
+	r[i-s] = ti;
+	ti = elem2(t,0);
+	shr2(t);
     }
+    r[s] = ti;
     return s+1;
 }
 

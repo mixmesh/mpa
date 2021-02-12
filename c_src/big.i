@@ -258,10 +258,10 @@ static INLINE int big_n_sqr(UINT_T* x, UINT_T* r, int n)
 	zero3(c);
 	sqra(x[i], r[i+i], &c[0], &r[i+i]);
 	for (j = i+1; j < n; j++) {
-	    UINT_T b[2];
-	    mul(x[i],x[j],&b[1],&b[0]);   // (b1,b0) = xi*xj
-	    add32(c, b, c);               // (c2,c1,c0) += (b1,b0)
-	    add32(c, b, c);               // (c2,c1,c0) += (b1,b0)
+	    UINT_T b1,b0;
+	    mul(x[i],x[j],&b1,&b0);   // (b1,b0) = xi*xj
+	    add32(c, b1,b0, c);               // (c2,c1,c0) += (b1,b0)
+	    add32(c, b1,b0, c);               // (c2,c1,c0) += (b1,b0)
 	    add31(c, r[i+j], c);          // (c2,c1,c0) += r[i+j]
 	    r[i+j] = c[0];
 	    shr3(c);
