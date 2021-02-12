@@ -64,6 +64,7 @@ void big_print(UINT_T* x, int xl)
 int big_mont_norm(UINT_T* r, int rl, UINT_T* n, int nl)
 {
     rl = big_trim(r, rl);
+    // return big_norm1(r, n, nl);
     return big_norm0(r, rl, n, nl);
 }
 

@@ -8,6 +8,7 @@
 #ifdef BIG_HAVE_DOUBLE_DIGIT
 #define UINTD_T ErlNifBigDoubleDigit
 #endif
+#define INT_T  ErlNifBigSignedDigit
 
 typedef enum {
     REDC_SOS,

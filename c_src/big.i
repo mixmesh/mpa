@@ -9,6 +9,7 @@
 
 #define D_EXP (__SIZEOF_POINTER__*8)
 #define D_MASK ((ErlNifBigDigit)(-1))      /* D_BASE-1 */
+#define D_SIZE (sizeof(UINT_T)*8)
 
 static void big_zero(UINT_T* dst, int n)
 {
@@ -154,6 +155,20 @@ static INLINE int big_norm0(UINT_T* x, int xl, UINT_T* n, int nl)
 	return big_sub(x, xl, n, nl, x, xl);
     else
 	return xl;
+}
+
+// version of above but wihtout comparsion x must be of size xl+1!
+static INLINE int big_norm1(UINT_T* z, UINT_T* n, int s)
+{
+    UINT_T mask = ((-(INT_T)z[s]) >> (D_SIZE-1));
+    int i;
+    UINT_T B;
+
+    sub(z[0], (n[0] & mask), &B, &z[0]);
+    for (i = 1; i < s; i++) {
+	subb(z[i], (n[i] & mask), B, &B, &z[i]);
+    }
+    return s;
 }
 
 // inline shift x:xl k digits to the right

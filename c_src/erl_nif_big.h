@@ -10,6 +10,7 @@ typedef ERL_NIF_TERM ErlNifBigDigit;
 /* Assume 32-bit machine with long long support */
 typedef uint64_t   ErlNifBigDoubleDigit;
 typedef uint16_t   ErlNifBigHalfDigit;
+typedef int32_t    ErlNifBigSignedDigit;
 #define BIG_HAVE_DOUBLE_DIGIT 1
 
 #elif (__SIZEOF_POINTER__ == 4)
@@ -17,10 +18,12 @@ typedef uint16_t   ErlNifBigHalfDigit;
 #undef  BIG_HAVE_DOUBLE_DIGIT
 // typedef uint32_t   ErlNifBigDigit;
 typedef uint16_t  ErlNifBigHalfDigit;
+typedef int32_t   ErlNifBigSignedDigit;
 
 #elif (__SIZEOF_POINTER__ == 8)
 // typedef uint64_t ErlNifBigDigit;
 typedef uint32_t ErlNifBigHalfDigit;
+typedef int64_t  ErlNifBigSignedDigit;
 /* Assume 64-bit machine, does it exist 128 bit long long long ? */
 #ifdef __SIZEOF_INT128__
 typedef __uint128_t  ErlNifBigDoubleDigit;
