@@ -12,17 +12,17 @@ static int big_mont_mul_cios(UINT_T* a, UINT_T* b, UINT_T* np, UINT_T* n,
 	UINT_T m;
 	int j;
 	for(j=0; j < s; j++) {
-	    mulab(a[j],b[i],r[j],C,&C,&r[j]);
+	    MULAB(a[j],b[i],r[j],C,&C,&r[j]);
 	}
-	add(r[s],C,&C,&r[s]);
+	ADD(r[s],C,&C,&r[s]);
 	r[s+1] = C;
 	C = 0;
-	mul0(r[0],np[0],&m);
-	mul1a(m, n[0], r[0], &C);
+	MUL0(r[0],np[0],&m);
+	MUL1A(m, n[0], r[0], &C);
 	for(j=1; j<s; j++) {
-	    mulab(m,n[j],r[j],C,&C,&r[j-1]);
+	    MULAB(m,n[j],r[j],C,&C,&r[j-1]);
 	}
-	add(r[s], C, &C, &r[s-1]);
+	ADD(r[s], C, &C, &r[s-1]);
 	r[s] = r[s+1] + C;
     }
     return s+1;

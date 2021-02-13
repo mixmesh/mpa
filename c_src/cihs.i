@@ -13,29 +13,29 @@ static int big_mont_mul_cihs(UINT_T* a, UINT_T* b, UINT_T* np, UINT_T* n,
 	UINT_T C = 0;
 	int j;
 	for(j=0; j < s-i; j++) {
-	    mulab(a[j],b[i],r[i+j],C,&C,&r[i+j]);
+	    MULAB(a[j],b[i],r[i+j],C,&C,&r[i+j]);
 	}
-	add(r[s],C,&C,&r[s]);
-	add(r[s+1],C,&C,&r[s+1]); // &C is not used
+	ADD(r[s],C,&C,&r[s]);
+	ADD(r[s+1],C,&C,&r[s+1]); // &C is not used
     }
     
     for (i=0; i < s; i++) {
 	UINT_T C;
 	UINT_T m;
 	int j;
-	mul0(r[0],np[0],&m);
-	mul1a(m, n[0], r[0], &C);
+	MUL0(r[0],np[0],&m);
+	MUL1A(m, n[0], r[0], &C);
 	for(j=1; j < s; j++) {
-	    mulab(m,n[j],r[j],C,&C,&r[j-1]);
+	    MULAB(m,n[j],r[j],C,&C,&r[j-1]);
 	}
-	add(r[s],C,&C,&r[s-1]);
-	add(r[s+1],C,&C,&r[s]);  // &C is not used
+	ADD(r[s],C,&C,&r[s-1]);
+	ADD(r[s+1],C,&C,&r[s]);  // &C is not used
 	r[s+1] = 0;
 	
 	for (j=i+1; j < s; j++) {
-	    mula(b[j], a[s-j+i], r[s-1], &C, &r[s-1]);
-	    add(r[s], C, &C, &r[s]);
-	    add(r[s+1], C, &C, &r[s+1]);  // &C is not used
+	    MULA(b[j], a[s-j+i], r[s-1], &C, &r[s-1]);
+	    ADD(r[s], C, &C, &r[s]);
+	    ADD(r[s+1], C, &C, &r[s+1]);  // &C is not used
 	}
     }
     return s+1;

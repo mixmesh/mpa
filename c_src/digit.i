@@ -11,22 +11,47 @@
 #warning "UINTD_T not defined"
 #endif
 
-#define INLINE inline
-
 #define bit_sizeof(T) (sizeof(T)*8)
 
+#define ADD0(src1, src2, sum) do {		\
+	*(sum) = (src1) + (src2);		\
+    } while(0)
+
+#ifdef USE_INLINE
 static INLINE void add0(UINT_T src1, UINT_T src2, UINT_T* sum)
 {
     *sum = src1 + src2;
 }
+#endif
 
+#define ADD(src1, src2, co, sum) do {		\
+    UINT_T SRC1l = (src1);			\
+    SRC1l += (src2);				\
+    *(sum) = SRC1l;				\
+    *(co) = (SRC1l < (src2));			\
+    } while(0)
+
+#ifdef USE_INLINE
 static INLINE void add(UINT_T src1, UINT_T src2, UINT_T* co, UINT_T* sum)
 {
     src1 += src2;
     *sum = src1;
     *co = (src1 < src2);
 }
+#endif
 
+#define ADDC(src1, src2, ci, co, sum) do {	\
+    UINT_T SRC1l = (src1);			\
+    UINT_T CIl = (ci);				\
+    SRC1l += (ci);				\
+    CIl = (SRC1l < (CIl));			\
+    SRC1l += (src2);				\
+    *(sum) = SRC1l;				\
+    *(co) = CIl + (SRC1l < (src2));		\
+    } while(0)
+
+
+#ifdef USE_INLINE
 static INLINE void addc(UINT_T src1, UINT_T src2, UINT_T ci, UINT_T* co, UINT_T* sum)
 {
     src1 += ci;
@@ -35,19 +60,46 @@ static INLINE void addc(UINT_T src1, UINT_T src2, UINT_T ci, UINT_T* co, UINT_T*
     *sum = src1;
     *co = ci + (src1 < src2);
 }
+#endif
 
+#define SUB0(src1, src2, diff) do { \
+    *(diff) = (src1) - (src2);	    \
+    } while(0)
+
+#ifdef USE_INLINE
 static INLINE void sub0(UINT_T src1, UINT_T src2, UINT_T* diff)
 {
     *diff = src1 - src2;
 }
+#endif
 
+#define SUB(src1, src2, bo, diff) do { \
+    UINT_T SRC2l = (src2);	       \
+    SRC2l = (src1) - SRC2l;	       \
+    *(diff) = SRC2l;		       \
+    *(bo) = (SRC2l > (src1));	       \
+    } while(0)
+
+#ifdef USE_INLINE
 static INLINE void sub(UINT_T src1, UINT_T src2, UINT_T* bo, UINT_T* diff)
 {
     src2 = src1 - src2;
     *diff = src2;
     *bo = (src2 > src1);
 }
+#endif
 
+#define SUBB(src1, src2, bi, bo, diff) do {	\
+    UINT_T SRC2l = (src2);			\
+    UINT_T BIl = (bi);				\
+    SRC2l += (bi);				\
+    BIl = (SRC2l < BIl);			\
+    SRC2l = (src1) - SRC2l;			\
+    *(bo) = BIl + (SRC2l > (src1));		\
+    *(diff) = SRC2l;				\
+    } while(0)
+
+#ifdef USE_INLINE
 static INLINE void subb(UINT_T src1, UINT_T src2, UINT_T bi, UINT_T* bo, UINT_T* diff)
 {
     src2 += bi;
@@ -56,31 +108,62 @@ static INLINE void subb(UINT_T src1, UINT_T src2, UINT_T bi, UINT_T* bo, UINT_T*
     *bo = bi + (src2 > src1);
     *diff = src2;
 }
+#endif
 
 // multiply and return LSB
+#ifdef USE_INLINE
 static INLINE void mul0(UINT_T src1, UINT_T src2, UINT_T* p0)
 {
     *p0 = src1 * src2;
 }
+#endif
+
+#define MUL0(src1,src2,p0) do { \
+    *(p0) = (src1) * (src2);	\
+    } while(0)
+
 
 #ifdef UINTD_T
 
 #define HSHIFT bit_sizeof(UINT_T)
- 
+
+#define MUL(src1,src2,p1,p0) do {		\
+    UINTD_T TMPl = ((UINTD_T)(src1))*(src2);	\
+    *(p1) = TMPl >> HSHIFT;			\
+    *(p0) = TMPl;				\
+    } while(0)
+	  
+
+#ifdef USE_INLINE
 static INLINE void mul(UINT_T src1, UINT_T src2, UINT_T* p1, UINT_T* p0)
 {
     UINTD_T t = ((UINTD_T)src1)*src2;
     *p1 = t >> HSHIFT;
     *p0 = t;
 }
+#endif
+
+#define MUL1(src1, src2, p1) do {		\
+    UINTD_T Tl = ((UINTD_T)(src1))*(src2);	\
+    *(p1) = Tl >> HSHIFT;			\
+    } while(0)
 
 // multiply and return MSB
+#ifdef USE_INLINE
 static INLINE void mul1(UINT_T src1, UINT_T src2, UINT_T* p1)
 {
     UINTD_T t = ((UINTD_T)src1)*src2;
     *p1 = t >> HSHIFT;
 }
+#endif
 
+#define MULA(src1, src2, a, prod1, prod0) do {	\
+    UINTD_T Tl = ((UINTD_T)(src1))*(src2) + (a);	\
+    *(prod1) = Tl >> HSHIFT;				\
+    *(prod0) = Tl;					\
+    } while(0)
+
+#ifdef USE_INLINE
 static INLINE void mula(UINT_T src1, UINT_T src2, UINT_T a,
 			UINT_T* prod1, UINT_T* prod0)
 {
@@ -88,28 +171,59 @@ static INLINE void mula(UINT_T src1, UINT_T src2, UINT_T a,
     *prod1 = t >> HSHIFT;
     *prod0 = t;
 }
+#endif
+
+#define MUL1A(src1, src2, a, p1) do {		\
+    UINTD_T Tl = ((UINTD_T)(src1))*(src2) + (a);	\
+    *(p1) = Tl >> HSHIFT;				\
+    } while(0)
 
 // multiply and return MSB
+#ifdef USE_INLINE
 static INLINE void mul1a(UINT_T src1, UINT_T src2, UINT_T a, UINT_T* p1)
 {
     UINTD_T t = ((UINTD_T)src1)*src2 + a;
     *p1 = t >> HSHIFT;
 }
+#endif
 
+#define SQRA(src1, a, prod1, prod0) do {	\
+    UINTD_T Tl = ((UINTD_T)(src1))*(src1) + (a);	\
+    *(prod1) = Tl >> HSHIFT;				\
+    *(prod0) = Tl;					\
+    } while(0)
+
+#ifdef USE_INLINE
 static INLINE void sqra(UINT_T src1, UINT_T a, UINT_T* prod1, UINT_T* prod0)
 {
     UINTD_T t = ((UINTD_T)src1)*src1 + a;
     *prod1 = t >> HSHIFT;
     *prod0 = t;
 }
+#endif
 
+#define SQR(src1, prod1, prod0) do {		\
+    UINTD_T Tl = ((UINTD_T)(src1))*(src1);	\
+    *(prod1) = Tl >> HSHIFT;			\
+    *(prod0) = Tl;				\
+    } while(0)
+
+#ifdef USE_INLINE
 static INLINE void sqr(UINT_T src1, UINT_T* prod1, UINT_T* prod0)
 {
     UINTD_T t = ((UINTD_T)src1)*src1;
     *prod1 = t >> HSHIFT;
     *prod0 = t;
 }
+#endif
 
+#define MULAB(src1, src2, a, b, prod1, prod0) do {	\
+    UINTD_T Tl = ((UINTD_T)(src1))*(src2) + (a) + (b);	\
+    *(prod1) = Tl >> HSHIFT;				\
+    *(prod0) = Tl;					\
+    } while(0)
+
+#ifdef USE_INLINE
 static INLINE void mulab(UINT_T src1, UINT_T src2, UINT_T a, UINT_T b,
 			 UINT_T* prod1, UINT_T* prod0)
 {
@@ -117,6 +231,7 @@ static INLINE void mulab(UINT_T src1, UINT_T src2, UINT_T a, UINT_T b,
     *prod1 = t >> HSHIFT;
     *prod0 = t;
 }
+#endif
 
 #elif defined(UINTH_T)
 

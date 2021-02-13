@@ -21,17 +21,17 @@ static int big_mont_mul_fips(UINT_T* a, UINT_T* b, UINT_T* np, UINT_T* n,
 	int j;
 	for (j=0; j < i; j++) {
 	    mula(a[j],b[i-j],ti,&C,&S);
-	    add31p(t, C);
+	    ADD31P(t, C);
 	    mula(r[j],n[i-j],S,&C,&S);
 	    ti = S;
-	    add31p(t, C);
+	    ADD31P(t, C);
 	}
 	mula(a[i],b[0],ti,&C,&S);
-	add31p(t, C);
-	mul0(S,np[0],&r[i]);
+	ADD31P(t, C);
+	MUL0(S,np[0],&r[i]);
 	mula(r[i],n[0], S, &C, &S);
-	add31p(t, C);
-	ti = elem3(t,0);
+	ADD31P(t, C);
+	ti = ELEM3(t,0);
 	shr3(t);
     }
 
@@ -39,14 +39,14 @@ static int big_mont_mul_fips(UINT_T* a, UINT_T* b, UINT_T* np, UINT_T* n,
 	int j;
 	for (j=i-s+1; j < s; j++) {
 	    mula(a[j],b[i-j],ti,&C,&S);
-	    add31p(t, C);
+	    ADD31P(t, C);
 	    mula(r[j],n[i-j],S,&C,&S);
 	    ti = S;
-	    add31p(t, C);
+	    ADD31P(t, C);
 	}
 	r[i-s] = ti;
-	ti = elem3(t,0);	
-	shr3(t);
+	ti = ELEM3(t,0);	
+	SHR3(t);
     }
     r[s] = ti;
     return s+1;

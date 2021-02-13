@@ -77,7 +77,7 @@ static int big_gt(UINT_T* x, int xl, UINT_T* y, int yl)
 static int big_addc(UINT_T* t, int i, int n, UINT_T c)
 {
     while(c && (i < n)) {
-	addc(t[i],0,c,&c,&t[i]);
+	ADDC(t[i],0,c,&c,&t[i]);
 	i++;
     }
     return i;
@@ -90,15 +90,15 @@ static int big_add(UINT_T* x, int xl, UINT_T* y, int yl,
     int i = 0;
 
     while((i < xl) && (i < yl)) {
-	addc(x[i],y[i],c,&c,&r[i]);
+	ADDC(x[i],y[i],c,&c,&r[i]);
 	i++;
     }
     while(i < xl) {
-	addc(x[i],0,c,&c,&r[i]);
+	ADDC(x[i],0,c,&c,&r[i]);
 	i++;
     }
     while(i < yl) {
-	addc(0,y[i],c,&c,&r[i]);	
+	ADDC(0,y[i],c,&c,&r[i]);	
 	i++;
     }
     if (c)
@@ -114,11 +114,11 @@ static int big_sub(UINT_T* x, int xl, UINT_T* y, int yl,
     int i = 0;
 
     while(i < yl) {
-	subb(x[i],y[i],b,&b,&r[i]);
+	SUBB(x[i],y[i],b,&b,&r[i]);
 	i++;
     }
     while(i < xl) {
-	subb(x[i],0,b,&b,&r[i]);
+	SUBB(x[i],0,b,&b,&r[i]);
 	i++;
     }
     do {
@@ -133,8 +133,8 @@ static int big_subb(UINT_T* x, UINT_T* y, UINT_T* r, int s)
     UINT_T B = 0;
     int i;
     for (i = 0; i < s; i++)
-	subb(x[i],y[i],B,&B,&r[i]);
-    subb(x[s],0,B,&B,&r[s]);
+	SUBB(x[i],y[i],B,&B,&r[i]);
+    SUBB(x[s],0,B,&B,&r[s]);
     return B;
 }
 
@@ -158,15 +158,16 @@ static INLINE int big_norm0(UINT_T* x, int xl, UINT_T* n, int nl)
 }
 
 // version of above but wihtout comparsion x must be of size xl+1!
+#define NSHIFT (bit_sizeof(UINT_T)-1)
 static INLINE int big_norm1(UINT_T* z, UINT_T* n, int s)
 {
-    UINT_T mask = ((-(INT_T)z[s]) >> (D_SIZE-1));
+    UINT_T mask = ((-(INT_T)z[s]) >> NSHIFT);
     int i;
     UINT_T B;
 
-    sub(z[0], (n[0] & mask), &B, &z[0]);
+    SUB(z[0], (n[0] & mask), &B, &z[0]);
     for (i = 1; i < s; i++) {
-	subb(z[i], (n[i] & mask), B, &B, &z[i]);
+	SUBB(z[i], (n[i] & mask), B, &B, &z[i]);
     }
     return s;
 }
@@ -193,8 +194,8 @@ static INLINE int big_mul_k(UINT_T* x, int xl,
 	int j, ij;
 	for (j = 0, ij=i; (j < yl) && (ij < k); j++, ij++) {
 	    UINT_T p;
-	    mula(x[i],y[j],cp,&cp,&p);
-	    addc(p,r[ij],c,&c,&r[ij]);
+	    MULA(x[i],y[j],cp,&cp,&p);
+	    ADDC(p,r[ij],c,&c,&r[ij]);
 	}
 	if (ij < k)
 	    r[ij] = c + cp;
@@ -217,7 +218,7 @@ static INLINE void big_n_mul(UINT_T* x, UINT_T* y, UINT_T* r, int n)
 	UINT_T c = 0;
 	int j, ij=i;
 	for (j = 0; j < n; j++) {
-	    mulab(x[i],y[j],r[ij],c,&c,&r[ij]);
+	    MULAB(x[i],y[j],r[ij],c,&c,&r[ij]);
 	    ij++;
 	}
 	r[ij] = c;  // top index is 2n-1
@@ -235,8 +236,8 @@ static INLINE int big_mul(UINT_T* x, int xl,
 	int j, ij;
 	for (j = 0, ij=i; (j < yl); j++, ij++) {
 	    UINT_T p;
-	    mula(x[i],y[j],cp,&cp,&p);
-	    addc(p,r[ij],c,&c,&r[ij]);
+	    MULA(x[i],y[j],cp,&cp,&p);
+	    ADDC(p,r[ij],c,&c,&r[ij]);
 	}
 	r[ij] = c + cp;
     }
@@ -253,21 +254,21 @@ static INLINE int big_n_sqr(UINT_T* x, UINT_T* r, int n)
     int i;
     for (i = 0; i < n; i++) {
 	UINT_T c[3];
-	UINT_T C;
+	UINT_T Co;
 	int j;
-	zero3(c);
-	sqra(x[i], r[i+i], &c[0], &r[i+i]);
+	ZERO3(c);
+	SQRA(x[i], r[i+i], &c[0], &r[i+i]);
 	for (j = i+1; j < n; j++) {
 	    UINT_T b1,b0;
-	    mul(x[i],x[j],&b1,&b0);   // (b1,b0) = xi*xj
-	    add32(c, b1,b0, c);               // (c2,c1,c0) += (b1,b0)
-	    add32(c, b1,b0, c);               // (c2,c1,c0) += (b1,b0)
-	    add31(c, r[i+j], c);          // (c2,c1,c0) += r[i+j]
+	    MUL(x[i],x[j],&b1,&b0);   // (b1,b0) = xi*xj
+	    ADD32(c, b1,b0, c);               // (c2,c1,c0) += (b1,b0)
+	    ADD32(c, b1,b0, c);               // (c2,c1,c0) += (b1,b0)
+	    ADD31(c, r[i+j], c);          // (c2,c1,c0) += r[i+j]
 	    r[i+j] = c[0];
-	    shr3(c);
+	    SHR3(c);
 	}
-	add(r[i+n], c[0], &C, &r[i+n]);
-	addc(r[i+n+1], c[1], C, &C, &r[i+n+1]);
+	ADD(r[i+n], c[0], &Co, &r[i+n]);
+	ADDC(r[i+n+1], c[1], Co, &Co, &r[i+n+1]);
     }
     return n+n;
 }
@@ -291,23 +292,23 @@ static INLINE int big_sqr(UINT_T* x, int xl,
 	si = ri;
 	
 	d = x[i++];
-	sqr(d, &z1, &b0);
-	addc(r[si],b0,y_3,&y_3,&r[si]);
+	SQR(d, &z1, &b0);
+	ADDC(r[si],b0,y_3,&y_3,&r[si]);
 	si++;
 
 	ij = i;
 	while(m--) {
-	    mul(d, x[ij], &b1, &b0);
+	    MUL(d, x[ij], &b1, &b0);
 	    ij++;
-	    addc(b0, b0, y_0, &y_0, &z0);
-	    addc(z0, z1, y_2, &y_2, &z2);
-	    addc(r[si],z2,y_3,&y_3,&r[si]);
+	    ADDC(b0, b0, y_0, &y_0, &z0);
+	    ADDC(z0, z1, y_2, &y_2, &z2);
+	    ADDC(r[si],z2,y_3,&y_3,&r[si]);
 	    si++;
-	    addc(b1, b1, y_1, &y_1, &z1);
+	    ADDC(b1, b1, y_1, &y_1, &z1);
 	}
 	z0 = y_0;
-	addc(z0, z1, y_2, &y_2, &z2);
-	addc(r[si], z2, y_3, &y_3, &r[si]);
+	ADDC(z0, z1, y_2, &y_2, &z2);
+	ADDC(r[si], z2, y_3, &y_3, &r[si]);
 	if (n != 0) {
 	    si++;
 	    r[si] = (y_1+y_2+y_3);

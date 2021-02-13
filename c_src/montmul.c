@@ -159,17 +159,18 @@ int big_mod2_sqr(UINT_T* a, UINT_T* r, int s)
 }
 
 
-// a^e (mod R)  (R=B^k > N)  (B = UINT_T base) r[s+2]
+// a^x (mod R)  (R=B^k > N)  (B = UINT_T base) r[s+2]
 int big_mont_pow(redc_type_t redc_type,
 		 UINT_T* a,
-		 UINT_T* e, int el,
+		 UINT_T* x, int xl,
 		 UINT_T* p, UINT_T* n, UINT_T* np, UINT_T* r, int s)
 {
     UINT_T P[2][s+2];
     UINT_T A[2][s+2];
     int u, v;
     int c, d;
-    int pos, nbits;
+    int pos, xbits;
+    int j;
     int rl;
 
     u = 0; v = u^1;
@@ -178,17 +179,22 @@ int big_mont_pow(redc_type_t redc_type,
     c = 0; d = c^1;
     big_copy(A[c], a, s);  // check al!
 
-    nbits = big_bits(e, el)-1;
+    xbits = big_bits(x, xl);
 
-    for (pos = 0; pos < nbits; pos++) {
-	int bit = big_test(e, el, pos);
-	if (bit) {
-	    big_mont_mul(redc_type,A[c],P[u],n,np,P[v],s);
-	    u = v; v = u^1;
+    for (pos=1, j=0; pos < xbits; pos += D_SIZE, j++) {    
+	UINT_T xj = x[j];
+	int size = (pos+D_SIZE < xbits) ? D_SIZE : xbits-pos;
+	int bit;
+	for (bit = 0; bit < size; bit++) {
+	    if (xj & 1) {
+		big_mont_mul(redc_type,A[c],P[u],n,np,P[v],s);
+		u = v; v = u^1;
+	    }
+	    // A' = A^2 (mod R)
+	    big_mont_sqr(redc_type,A[c],n,np,A[d],s);
+	    c = d; d = c^1;
+	    xj >>= 1;
 	}
-	// A' = A^2 (mod R)
-	big_mont_sqr(redc_type,A[c],n,np,A[d],s);
-	c = d; d = c^1;
     }
     // r = A*P (mod R)
     rl = big_mont_mul(redc_type, A[c], P[u], n, np, r, s);

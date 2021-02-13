@@ -7,34 +7,34 @@
 // P[2s]=0, n[s], np[s], r[s+1]
 static int big_mont_redc_sps(UINT_T* P,UINT_T* n,UINT_T* np,UINT_T* r,int s)
 {
-    decl3(u);
+    DECL3(u);
     UINT_T p1,p0;
     int i, j;
 
-    zero3(u);
+    ZERO3(u);
     for (i = 0; i < s; i++) {
 	for (j = 0; j < i; j++) {
-	    mul(r[j],n[i-j],&p1,&p0);
-	    add32p(u,p1,p0);
+	    MUL(r[j],n[i-j],&p1,&p0);
+	    ADD32p(u,p1,p0);
 	}
-	add31p(u,P[i]);
-	mul0(elem3(u,0), np[0], &r[i]);
-	mul(r[i],n[0],&p1,&p0);
-	add32p(u,p1,p0);
-	shr3(u);
+	ADD31p(u,P[i]);
+	MUL0(ELEM3(u,0), np[0], &r[i]);
+	MUL(r[i],n[0],&p1,&p0);
+	ADD32p(u,p1,p0);
+	SHR3(u);
     }
     for (i = s; i < 2*s-1; i++) {
 	for (j = i-s+1; j < s; j++) {
-	    mul(r[j],n[i-j],&p1,&p0);
-	    add32p(u,p1,p0);
+	    MUL(r[j],n[i-j],&p1,&p0);
+	    ADD32p(u,p1,p0);
 	}
-	add31p(u,P[i]);
-	r[i-s] = elem3(u,0);
-	shr3(u);
+	ADD31p(u,P[i]);
+	r[i-s] = ELEM3(u,0);
+	SHR3(u);
     }
-    add31p(u,P[2*s-1]);
-    r[s-1] = elem3(u,0);
-    r[s] = elem3(u,1);
+    ADD31p(u,P[2*s-1]);
+    r[s-1] = ELEM3(u,0);
+    r[s] = ELEM3(u,1);
     return s+1;
 }
 //

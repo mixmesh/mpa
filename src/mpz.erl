@@ -13,9 +13,13 @@
 -export([big_mont_mul/5, big_mont_mul/3]).
 -export([big_mont_sqr/4, big_mont_sqr/2]).
 -export([big_mont_pow/6, big_mont_pow/3]).
--export([mont/1, mont/2, redc/2]).
+-export([mont/1, mont/2, mont_w/3, redc/2]).
+-export([mont_w_fips/1, mont_w_fips/2]).
+
 -export([to_mont/2, from_mont/2]).
 -export([to_mont/3, from_mont/3]).
+-export([format_mont/1,format_mont/2]).
+-export([format_cnum/3]).
 %% test
 -export([all/0]).
 -export([test1/0, test3/0, test4/0]).
@@ -33,29 +37,9 @@
 -export([test_pow_random/2, test_pow_random/3]).
 -export([fips_accumulator_size/1, fips_accumulator_size/2]).
 
--type mont_meth() :: sos | sps | cios | fips | fios | cihs.
--type unsigned() :: non_neg_integer().
-
--define(defmeth, sos).
--define(allmeth, [sos,sps,cios,fips,fios,cihs]).
--define(imeth, [cios,fips,fios,cihs]).  %% integrated
--define(smeth, [sos,sps]).      %% separate
-
--record(mont,
-	{
-	 meth = ?defmeth :: mont_meth(),
-	 k,   %% size of n in number of bignum digits
-	 m1,  %% mont(1)  1 in montgomery space
-	 n,   %% modulus
-	 np,  %% -N^-1 (mod 2^k)
-	 ri   %% R^-1 (mod n)  (r = 1 << k)
-	}).
+-include("mont.hrl").
 
 -define(is_odd(P), (((P) band 1) =:= 1)).
--define(is_meth(M), 
-	((((M)=:=sos) orelse ((M)=:=sps)
-	  orelse ((M)=:=cios) orelse ((M)=:=fips) orelse ((M)=:=fios)
-	  orelse ((M)=:=cihs)))).
 
 %% Exported: dlog
 
@@ -135,14 +119,25 @@ probab_prime_p(N, Reps) ->
   gmp_nif:mpz_probab_prime_p(binary:encode_unsigned(N), Reps).
 
 %% calculate mongomery paramters Ri,Np
+-define(P_1024, 1191703890297837857254846218124820162520314254482239260141586246493315566589245659462156276340012962327654624865776671922725912417154643528357403702766406672783187741039499777500937664819366321506835371609274218842538110523885904400885445461904752292635899168049169243216400297218378136654191604761801220538347).
+
 mont(N) ->
     mont(?defmeth,N).
 
 -spec mont(Meth::mont_meth(), N::unsigned()) -> #mont{}.
-				    
 mont(Meth,N) when is_integer(N), N>0, ?is_odd(N) ->
     W = 8*erlang:system_info(wordsize),
-    K = big_size(N)*W,
+    mont_w(Meth, N, W).
+
+mont_w_fips(W) ->
+    mont_w(fips,?P_1024,W).
+
+mont_w_fips(N, W) ->
+    mont_w(fips,N,W).
+				    
+mont_w(Meth,N,W) when is_integer(N), N>0, ?is_odd(N) ->
+    Ns = big_bits(N),
+    K = ((Ns + W - 1) div W)*W,
     R = (1 bsl K),
     {1,{S,T}} = egcd(R, N),
     Ri = mod(S, N),
@@ -163,6 +158,33 @@ to_mont(X, K, N) -> (X bsl K) rem N.
 
 from_mont(Y, #mont{n=N,ri=Ri}) -> from_mont(Y,Ri,N).
 from_mont(Y,Ri,N) -> (Y*Ri) rem N.
+
+%% Output current mont contants i C code format
+%% to be used by C/openCL etc
+%% W must be equal to sizeof(UINT_T) on target
+%% W is typically 32 for openCL (int), and 32 or 64 for C (int or long)
+format_mont(M) -> format_mont(M,32).
+format_mont(M,W) ->
+    N = (M#mont.k+W-1) div W,
+    io:format("CONST int mont_K = ~w;\n", [M#mont.k]),
+    io:format("CONST int mont_S = ~w;\n", [N]),
+    io:format("CONST UINT_T mont_N[~w] = ~s;\n", 
+	      [N,format_cnum(W,M#mont.k,M#mont.n)]),
+    io:format("CONST UINT_T mont_Np[~w] = ~s;\n", 
+	      [N,format_cnum(W,M#mont.k,M#mont.np)]),
+    io:format("CONST UINT_T mont_1[~w] = ~s;\n", 
+	      [N,format_cnum(W,M#mont.k,M#mont.m1)]),
+    ok.
+
+format_cnum(W,K,N) ->
+    Ds = format_cnum_(W,(1 bsl W)-1,K,N,[]),
+    DsL = ["0x"++tl(integer_to_list(D+(1 bsl W), 16)) || D <- Ds],
+    ["{",string:join(DsL,","),"}"].
+
+format_cnum_(_W, _Wm, K, _N, Acc) when K =< 0 ->
+    lists:reverse(Acc);
+format_cnum_(W, Wm, K, N, Acc) ->
+    format_cnum_(W, Wm, K-W, N bsr W, [(N band Wm) | Acc]).
 
 %%  Montgomery reduction
 redc(T, #mont{k=K,n=N,np=Np}) ->

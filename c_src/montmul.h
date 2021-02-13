@@ -3,6 +3,12 @@
 
 #include "erl_nif_big.h"
 
+#define GLOBAL
+#define LOCAL
+#define PRIVATE
+#define CONST   const
+#define INLINE  inline
+
 #define UINT_T  ErlNifBigDigit
 #define UINTH_T ErlNifBigHalfDigit
 #ifdef BIG_HAVE_DOUBLE_DIGIT

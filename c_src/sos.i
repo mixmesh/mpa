@@ -13,13 +13,13 @@ static int big_mont_redc_sos(UINT_T* P, UINT_T* n, UINT_T* np, UINT_T* r, int s)
 	UINT_T m;
 	int ij = i;
 
-	mul0(P[i],np[0],&m);
+	MUL0(P[i],np[0],&m);
 
 	for (j = 0; j < s; j++) {
-	    mulab(n[j],m,P[ij],C,&C,&P[ij]);
+	    MULAB(n[j],m,P[ij],C,&C,&P[ij]);
 	    ij++;
 	}
-	addc(P[ij],t,C,&C,&P[ij]);
+	ADDC(P[ij],t,C,&C,&P[ij]);
 	t = C;
     }
     for (j = 0; j < s; j++)
