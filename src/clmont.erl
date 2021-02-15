@@ -27,7 +27,7 @@ build() ->
     end.
 
 mont() ->
-    mpz:mont(cios, ?P_1024).
+    mpz:mont(cihs, ?P_1024).
 
 format_mont() ->
     format_mont(mont()).
@@ -96,11 +96,13 @@ test(DevType, Count) ->
 	    Rs = decode_numbers(ResData,32,M#mont.k),
 	    Rs1 = [mpz:from_mont(Rm,M) || Rm <- Rs],
 	    %% FIXME: does not return correct result!
-	    lists:foreach(
-	      fun({R,Ai}) ->
-		      io:format("Ai=~w,X=~w,R=~w\n", [Ai,X,R]),
-		      io:format("Ri=~w\n", [mpz:powm(Ai, X, M#mont.n)])
-	      end, lists:zip(Rs1, As)),
+	    %% lists:foreach(
+	    %% fun({R,Ai}) ->
+	    %% io:format("Ai=~w,X=~w,R=~w\n", [Ai,X,R]),
+	    %% Ri = mpz:powm(Ai, X, M#mont.n),
+	    %% io:format("Ri=~w\n", [Ri]),
+	    %% R = Ri
+	    %% end, lists:zip(Rs1, As)),
 	    Rs1;
 	Error ->
 	    Error
@@ -329,15 +331,15 @@ global_size(N, _WorkGroupSize) -> N.
 
 
 random_a(M) ->
-    %% P = M#mont.n,
-    %% uniform(0, P-1).
-    %% uniform(1,10).
-    2.
+    P = M#mont.n,
+    uniform(0, P-1).
+%% uniform(1,10).
+%%    2.
 
 random_x(M) ->
-    %% Q = (M#mont.n - 1) div 2,
-    %% uniform(1, Q),
-    10.
+    Q = (M#mont.n - 1) div 2,
+    uniform(1, Q).
+%%    10.
 
 uniform(Min, Max) ->
     Min1 = Min - 1,
