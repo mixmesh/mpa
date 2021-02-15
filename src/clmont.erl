@@ -157,6 +157,12 @@ run(AsData,XData,XBits,DevType,Count) ->
     {ok,MaxUnits} = cl:get_device_info(Device, max_compute_units),
     io:format("max_compute_units = ~w\n", [MaxUnits]),
     {ok,WGSize} = cl:get_kernel_workgroup_info(Kernel, Device, work_group_size),
+    io:format("work_group_size = ~w\n", [WGSize]),
+    {ok,CWGSize} = cl:get_kernel_workgroup_info(Kernel, Device, 
+					       compile_work_group_size),
+    io:format("compile_work_group_size = ~w\n", [CWGSize]),
+    {ok,LMSize} = cl:get_kernel_workgroup_info(Kernel, Device, local_mem_size),
+    io:format("local_mem_size = ~w\n", [LMSize]),
 
     EGlobal = global_size(Count,WGSize),
     ELocal = local_size(EGlobal,WGSize),
@@ -266,6 +272,14 @@ test_mul(A, B) ->
 
     {ok,WGSize} = cl:get_kernel_workgroup_info(?GET(C,k),?GET(C,d),
 					       work_group_size),
+    io:format("work_group_size = ~w\n", [WGSize]),
+    {ok,CWGSize} = cl:get_kernel_workgroup_info(?GET(C,k),?GET(C,d),
+					       compile_work_group_size),
+    io:format("compile_work_group_size = ~w\n", [CWGSize]),
+    {ok,LMSize} = cl:get_kernel_workgroup_info(?GET(C,k),?GET(C,d),
+					       local_mem_size),
+    io:format("local_mem_size = ~w\n", [LMSize]),
+
     EGlobal = global_size(Count,WGSize),
     ELocal = local_size(EGlobal,WGSize),
     {ok,Event3} = cl:enqueue_nd_range_kernel(?GET(C,q), ?GET(C,k),

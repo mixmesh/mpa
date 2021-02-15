@@ -8,8 +8,8 @@
 // #endif
 
 // unrolling
-//#define UNROLL __attribute__((opencl_unroll_hint))
-//#define UNROLLN(n) __attribute__((opencl_unroll_hint(n)))
+// #define UNROLL __attribute__((opencl_unroll_hint))
+// #define UNROLLN(n) __attribute__((opencl_unroll_hint(n)))
 
 #define UNROLL
 #define UNROLLN(n)
@@ -138,6 +138,17 @@ __kernel void mul0(GLOBAL UINT_T* a,   // in a[i]
     zero_to_private(R, mont_S);
     big_mul0(A, B, R, mont_S);
     private_to_global(R, r, mont_S);
+}
+
+__kernel void mulx(GLOBAL UINT_T* a,   // in a[i]
+		   GLOBAL UINT_T* b,   // in b[i]
+		   GLOBAL UINT_T* r,   // out r[i]
+		   const unsigned int n)
+{
+    const int i = get_global_id(0);
+    if (i >= n) return;
+
+    r[i] = a[i] * b[i];
 }
 
 void print_global(GLOBAL UINT_T* x, int xl)
