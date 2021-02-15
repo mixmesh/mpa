@@ -695,7 +695,7 @@ static ERL_NIF_TERM _big_mont_sqr(ErlNifEnv* env, int argc,
     }    
 }
 
-// args mont_pow(A, E, P, N, Np)
+// args mont_pow(A, E, M1, N, Np)
 static ERL_NIF_TERM _big_mont_pow(ErlNifEnv* env, int argc,
 				  const ERL_NIF_TERM argv[])
 {

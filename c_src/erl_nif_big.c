@@ -102,7 +102,7 @@ ERL_NIF_TERM enif_make_number(ErlNifEnv* env, ErlNifBignum* big)
     return t;
 }
 
-// Load numer, big or small as ErlNigBignum
+// Load number, big or small as ErlNigBignum
 int enif_get_number(ErlNifEnv* env, ERL_NIF_TERM t, ErlNifBignum* big)
 {
     if (enif_inspect_big(env, t, big))

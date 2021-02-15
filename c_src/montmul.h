@@ -6,8 +6,11 @@
 #define GLOBAL
 #define LOCAL
 #define PRIVATE
+#define STATIC  static
 #define CONST   const
 #define INLINE  inline
+#define UNROLL
+#define UNROLLN(n)
 
 #define UINT_T  ErlNifBigDigit
 #define UINTH_T ErlNifBigHalfDigit

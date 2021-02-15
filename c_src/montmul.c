@@ -168,35 +168,38 @@ int big_mont_pow(redc_type_t redc_type,
     UINT_T P[2][s+2];
     UINT_T A[2][s+2];
     int u, v;
-    int c, d;
     int pos, xbits;
     int j;
     int rl;
 
-    u = 0; v = u^1;
+    u = 0;
     big_copy(P[u], p, s);   // = mont(1) !
 
-    c = 0; d = c^1;
-    big_copy(A[c], a, s);  // check al!
+    v = 0;
+    big_copy(A[v], a, s);  // check al!
 
     xbits = big_bits(x, xl);
 
-    for (pos=1, j=0; pos < xbits; pos += D_SIZE, j++) {    
+    for (pos=1, j=0; pos < xbits; pos += D_SIZE, j++) {
 	UINT_T xj = x[j];
 	int size = (pos+D_SIZE < xbits) ? D_SIZE : xbits-pos;
 	int bit;
 	for (bit = 0; bit < size; bit++) {
 	    if (xj & 1) {
-		big_mont_mul(redc_type,A[c],P[u],n,np,P[v],s);
-		u = v; v = u^1;
+		big_mont_mul(redc_type,A[v],P[u],n,np,P[!u],s);
+		BIGPRINT1("%sP[!u]=", P[!u], s, "");		
+		u = !u;
 	    }
 	    // A' = A^2 (mod R)
-	    big_mont_sqr(redc_type,A[c],n,np,A[d],s);
-	    c = d; d = c^1;
+	    big_mont_sqr(redc_type,A[v],n,np,A[!v],s);
+	    BIGPRINT1("%sA[!v]=", A[!v], s, "");
+	    v = !v;
+	    
 	    xj >>= 1;
 	}
     }
     // r = A*P (mod R)
-    rl = big_mont_mul(redc_type, A[c], P[u], n, np, r, s);
+    rl = big_mont_mul(redc_type, A[v], P[u], n, np, r, s);
+    BIGPRINT1("%sr=", r, s, "");
     return rl;
 }

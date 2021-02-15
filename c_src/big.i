@@ -1,31 +1,27 @@
 #ifndef __BIG_I__
 #define __BIG_I__
 
-#ifndef INLINE
-#define INLINE inline
-#endif
-
 #include "big3.i"
 
 #define D_EXP (__SIZEOF_POINTER__*8)
 #define D_MASK ((ErlNifBigDigit)(-1))      /* D_BASE-1 */
 #define D_SIZE (sizeof(UINT_T)*8)
 
-static void big_zero(UINT_T* dst, int n)
+STATIC void big_zero(UINT_T* dst, int n)
 {
     int i;
     for (i = 0; i < n; i++)
 	dst[i] = 0;
 }
 
-static void big_copy(UINT_T* dst, UINT_T* src, int s)
+STATIC void big_copy(UINT_T* dst, UINT_T* src, int s)
 {
     int i;
     for (i = 0; i < s; i++)
 	dst[i] = src[i];
 }
 
-static int big_bits(UINT_T* x, int xl)
+STATIC int big_bits(UINT_T* x, int xl)
 {
     int n = 8*sizeof(UINT_T)*(xl-1);
     UINT_T h = x[xl-1];
@@ -38,7 +34,7 @@ static int big_bits(UINT_T* x, int xl)
     return n;
 }
 
-static int big_test(UINT_T* x, int xl, unsigned pos)
+STATIC int big_test(UINT_T* x, int xl, unsigned pos)
 {
     int d = pos / D_EXP; // digit
     pos %= D_EXP;      // bit
@@ -46,8 +42,7 @@ static int big_test(UINT_T* x, int xl, unsigned pos)
     return (x[d] & (1 << pos)) != 0;
 }
 
-
-static int big_comp(UINT_T* x, int xl, UINT_T* y, int yl)
+STATIC int big_comp(UINT_T* x, int xl, UINT_T* y, int yl)
 {
     if (xl < yl)
 	return -1;
@@ -69,12 +64,12 @@ static int big_comp(UINT_T* x, int xl, UINT_T* y, int yl)
     }
 }
 
-static int big_gt(UINT_T* x, int xl, UINT_T* y, int yl)
+STATIC int big_gt(UINT_T* x, int xl, UINT_T* y, int yl)
 {
     return big_comp(x, xl, y, yl) > 0;
 }
 
-static int big_addc(UINT_T* t, int i, int n, UINT_T c)
+STATIC int big_addc(UINT_T* t, int i, int n, UINT_T c)
 {
     while(c && (i < n)) {
 	ADDC(t[i],0,c,&c,&t[i]);
@@ -83,7 +78,7 @@ static int big_addc(UINT_T* t, int i, int n, UINT_T c)
     return i;
 }
 
-static int big_add(UINT_T* x, int xl, UINT_T* y, int yl,
+STATIC int big_add(UINT_T* x, int xl, UINT_T* y, int yl,
 		   UINT_T* r, int szr)
 {
     UINT_T c = 0;
@@ -107,7 +102,7 @@ static int big_add(UINT_T* x, int xl, UINT_T* y, int yl,
 }
 
 // x >= y
-static int big_sub(UINT_T* x, int xl, UINT_T* y, int yl,
+STATIC int big_sub(UINT_T* x, int xl, UINT_T* y, int yl,
 		   UINT_T* r, int szr)
 {
     UINT_T b = 0;
@@ -128,7 +123,7 @@ static int big_sub(UINT_T* x, int xl, UINT_T* y, int yl,
 }
 
 // subtract and return borrow
-static int big_subb(UINT_T* x, UINT_T* y, UINT_T* r, int s)
+STATIC UINT_T big_subb(UINT_T* x, UINT_T* y, UINT_T* r, int s)
 {
     UINT_T B = 0;
     int i;
@@ -139,7 +134,7 @@ static int big_subb(UINT_T* x, UINT_T* y, UINT_T* r, int s)
 }
 
 // trim MSB=0
-static INLINE int big_trim(UINT_T* x, int xl)
+STATIC INLINE int big_trim(UINT_T* x, int xl)
 {
     while((xl>1) && (x[xl-1]==0))
 	xl--;
@@ -149,7 +144,7 @@ static INLINE int big_trim(UINT_T* x, int xl)
 //
 // if (X > N) X = X - N
 //  
-static INLINE int big_norm0(UINT_T* x, int xl, UINT_T* n, int nl)
+STATIC INLINE int big_norm0(UINT_T* x, int xl, UINT_T* n, int nl)
 {
     if (big_comp(x, xl, n, nl) > 0)
 	return big_sub(x, xl, n, nl, x, xl);
@@ -159,7 +154,7 @@ static INLINE int big_norm0(UINT_T* x, int xl, UINT_T* n, int nl)
 
 // version of above but wihtout comparsion x must be of size xl+1!
 #define NSHIFT (bit_sizeof(UINT_T)-1)
-static INLINE int big_norm1(UINT_T* z, UINT_T* n, int s)
+STATIC INLINE int big_norm1(UINT_T* z, UINT_T* n, int s)
 {
     UINT_T mask = ((-(INT_T)z[s]) >> NSHIFT);
     int i;
@@ -173,7 +168,7 @@ static INLINE int big_norm1(UINT_T* z, UINT_T* n, int s)
 }
 
 // inline shift x:xl k digits to the right
-static INLINE int big_shr(UINT_T* x, int xl, int k)
+STATIC INLINE int big_shr(UINT_T* x, int xl, int k)
 {
     int n = xl - k;
     int i;
@@ -183,7 +178,7 @@ static INLINE int big_shr(UINT_T* x, int xl, int k)
 }
 
 // multiply x and y module (B^k) (B is 2^w) (w = 8*sizeof(UINT_T))
-static INLINE int big_mul_k(UINT_T* x, int xl,
+STATIC INLINE int big_mul_k(UINT_T* x, int xl,
 			    UINT_T* y, int yl,
 			    UINT_T* r, int k)
 {
@@ -211,7 +206,7 @@ static INLINE int big_mul_k(UINT_T* x, int xl,
 // the result of x[n]*y[n] is added to r[2n] so it must be
 // set to zero before calling big_n_mul, unless intensional
 //
-static INLINE void big_n_mul(UINT_T* x, UINT_T* y, UINT_T* r, int n)
+STATIC INLINE void big_n_mul(UINT_T* x, UINT_T* y, UINT_T* r, int n)
 {
     int i;
     for (i = 0; i < n; i++) {
@@ -225,7 +220,7 @@ static INLINE void big_n_mul(UINT_T* x, UINT_T* y, UINT_T* r, int n)
     }
 }
 
-static INLINE int big_mul(UINT_T* x, int xl,
+STATIC INLINE int big_mul(UINT_T* x, int xl,
 			  UINT_T* y, int yl,
 			  UINT_T* r, int szr)
 {
@@ -249,31 +244,32 @@ static INLINE int big_mul(UINT_T* x, int xl,
 }
 
 // x[s]  r[2n]
-static INLINE int big_n_sqr(UINT_T* x, UINT_T* r, int n)
+STATIC INLINE int big_n_sqr(UINT_T* x, UINT_T* r, int n)
 {
     int i;
     for (i = 0; i < n; i++) {
-	UINT_T c[3];
+	DECL3(c);
 	UINT_T Co;
 	int j;
 	ZERO3(c);
-	SQRA(x[i], r[i+i], &c[0], &r[i+i]);
+	SQRA(x[i], r[i+i], &Co, &r[i+i]);
+	ELEM3(c,0) = Co;
 	for (j = i+1; j < n; j++) {
 	    UINT_T b1,b0;
 	    MUL(x[i],x[j],&b1,&b0);   // (b1,b0) = xi*xj
-	    ADD32(c, b1,b0, c);               // (c2,c1,c0) += (b1,b0)
-	    ADD32(c, b1,b0, c);               // (c2,c1,c0) += (b1,b0)
-	    ADD31(c, r[i+j], c);          // (c2,c1,c0) += r[i+j]
-	    r[i+j] = c[0];
+	    ADD32p(c, b1,b0);         // (c2,c1,c0) += (b1,b0)
+	    ADD32p(c, b1,b0);         // (c2,c1,c0) += (b1,b0)
+	    ADD31p(c, r[i+j]);        // (c2,c1,c0) += r[i+j]
+	    r[i+j] = ELEM3(c,0);
 	    SHR3(c);
 	}
-	ADD(r[i+n], c[0], &Co, &r[i+n]);
-	ADDC(r[i+n+1], c[1], Co, &Co, &r[i+n+1]);
+	ADD(r[i+n], ELEM3(c,0), &Co, &r[i+n]);
+	ADDC(r[i+n+1], ELEM3(c,1), Co, &Co, &r[i+n+1]);
     }
     return n+n;
 }
 
-static INLINE int big_sqr(UINT_T* x, int xl,
+STATIC INLINE int big_sqr(UINT_T* x, int xl,
 			  UINT_T* r, int szr)
 {
     UINT_T d;

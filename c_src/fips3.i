@@ -8,9 +8,9 @@
 // log64(64*63*128)  ~ 3
 // log64(64*63*4096)  ~ 4
 // a[s], b[s], m[s+2]!
-static int big_mont_mul_fips(PRIVATE UINT_T* a, PRIVATE UINT_T* b,
-			     CONST UINT_T* np, CONST UINT_T* n,
-			     PRIVATE UINT_T* r,int s)
+STATIC INLINE int big_mont_mul_fips(PRIVATE UINT_T* a, PRIVATE UINT_T* b,
+				    CONST UINT_T* np, CONST UINT_T* n,
+				    PRIVATE UINT_T* r,int s)
 {
     DECL2(t);
     UINT_T ti;
@@ -55,9 +55,9 @@ static int big_mont_mul_fips(PRIVATE UINT_T* a, PRIVATE UINT_T* b,
     return s+1;
 }
 
-static int big_mont_sqr_fips(PRIVATE UINT_T* a,
-			     CONST UINT_T* np, CONST UINT_T* n,
-			     PRIVATE UINT_T* r, int s)
+STATIC INLINE int big_mont_sqr_fips(PRIVATE UINT_T* a,
+				    CONST UINT_T* np, CONST UINT_T* n,
+				    PRIVATE UINT_T* r, int s)
 {
     return big_mont_mul_fips(a, a, np, n, r, s);
 }

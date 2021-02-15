@@ -13,7 +13,7 @@
 -export([big_mont_mul/5, big_mont_mul/3]).
 -export([big_mont_sqr/4, big_mont_sqr/2]).
 -export([big_mont_pow/6, big_mont_pow/3]).
--export([mont/1, mont/2, mont_w/3, redc/2]).
+-export([mont/1, mont/2, mont_w/2, mont_w/3, redc/2]).
 -export([mont_w_fips/1, mont_w_fips/2]).
 
 -export([to_mont/2, from_mont/2]).
@@ -91,21 +91,20 @@ big_bits(X) -> gmp_nif:big_bits(X).
 
 big_mod2_sqr(A, K) -> gmp_nif:big_mod2_sqr(A, K).
     
+big_mont_mul(Am,Bm,#mont{meth=Meth,n=N,np=Np}) ->
+    big_mont_mul(Meth,Am,Bm,N,Np).
+big_mont_mul(Meth,Am,Bm,N,Np) ->
+    gmp_nif:big_mont_mul(Meth,Am,Bm,N,Np).
 
-big_mont_mul(A, B, #mont{meth=Meth,n=N,np=Np}) ->
-    big_mont_mul(Meth,A, B, N, Np).
-big_mont_mul(Meth,A, B, N, Np) ->
-    gmp_nif:big_mont_mul(Meth,A,B,N,Np).
+big_mont_sqr(Am, #mont{meth=Meth,n=N,np=Np}) ->
+    big_mont_sqr(Meth,Am,N,Np).
+big_mont_sqr(Meth,Am,N,Np) ->
+    gmp_nif:big_mont_sqr(Meth,Am,N,Np).
 
-big_mont_sqr(A, #mont{meth=Meth,n=N,np=Np}) ->
-    big_mont_sqr(Meth,A,N,Np).
-big_mont_sqr(Meth,A, N, Np) ->
-    gmp_nif:big_mont_sqr(Meth,A,N,Np).
-
-big_mont_pow(Ah, E, #mont{meth=Meth,m1=M1,n=N,np=Np}) ->
-    big_mont_pow(Meth,Ah,E,M1,N,Np).
-big_mont_pow(Meth,Ah,E,P1,N,Np) ->
-    gmp_nif:big_mont_pow(Meth,Ah,E,P1,N,Np).
+big_mont_pow(Am, X, #mont{meth=Meth,m1=M1,n=N,np=Np}) ->
+    big_mont_pow(Meth,Am,X,M1,N,Np).
+big_mont_pow(Meth,Am,X,M1,N,Np) ->
+    gmp_nif:big_mont_pow(Meth,Am,X,M1,N,Np).
 
 %% Exported: pow_ui
 
@@ -134,7 +133,9 @@ mont_w_fips(W) ->
 
 mont_w_fips(N, W) ->
     mont_w(fips,N,W).
-				    
+
+mont_w(Meth,W) ->
+    mont_w(Meth,?P_1024,W).
 mont_w(Meth,N,W) when is_integer(N), N>0, ?is_odd(N) ->
     Ns = big_bits(N),
     K = ((Ns + W - 1) div W)*W,
@@ -165,15 +166,16 @@ from_mont(Y,Ri,N) -> (Y*Ri) rem N.
 %% W is typically 32 for openCL (int), and 32 or 64 for C (int or long)
 format_mont(M) -> format_mont(M,32).
 format_mont(M,W) ->
-    N = (M#mont.k+W-1) div W,
+    S = (M#mont.k+W-1) div W,
+    io:format("#include \"~s.i\"\n", [M#mont.meth]),
     io:format("CONST int mont_K = ~w;\n", [M#mont.k]),
-    io:format("CONST int mont_S = ~w;\n", [N]),
+    io:format("CONST int mont_S = ~w;\n", [S]),
     io:format("CONST UINT_T mont_N[~w] = ~s;\n", 
-	      [N,format_cnum(W,M#mont.k,M#mont.n)]),
+	      [S,format_cnum(W,M#mont.k,M#mont.n)]),
     io:format("CONST UINT_T mont_Np[~w] = ~s;\n", 
-	      [N,format_cnum(W,M#mont.k,M#mont.np)]),
+	      [S,format_cnum(W,M#mont.k,M#mont.np)]),
     io:format("CONST UINT_T mont_1[~w] = ~s;\n", 
-	      [N,format_cnum(W,M#mont.k,M#mont.m1)]),
+	      [S,format_cnum(W,M#mont.k,M#mont.m1)]),
     ok.
 
 format_cnum(W,K,N) ->

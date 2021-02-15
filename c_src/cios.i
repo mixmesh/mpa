@@ -3,14 +3,17 @@
 #define __CIOS_I__
 
 // a[s], b[s], r[s+2]
-static int big_mont_mul_cios(UINT_T* a, UINT_T* b, UINT_T* np, UINT_T* n,
-			     UINT_T* r, int s)
+STATIC INLINE int big_mont_mul_cios(PRIVATE UINT_T* a, PRIVATE UINT_T* b,
+			     CONST UINT_T* np, CONST UINT_T* n,
+			     PRIVATE UINT_T* r, int s)
 {
     int i;
+UNROLL    
     for (i=0; i < s; i++) {
 	UINT_T C = 0;
 	UINT_T m;
 	int j;
+	UNROLL
 	for(j=0; j < s; j++) {
 	    MULAB(a[j],b[i],r[j],C,&C,&r[j]);
 	}
@@ -19,6 +22,7 @@ static int big_mont_mul_cios(UINT_T* a, UINT_T* b, UINT_T* np, UINT_T* n,
 	C = 0;
 	MUL0(r[0],np[0],&m);
 	MUL1A(m, n[0], r[0], &C);
+	UNROLL
 	for(j=1; j<s; j++) {
 	    MULAB(m,n[j],r[j],C,&C,&r[j-1]);
 	}
@@ -28,8 +32,9 @@ static int big_mont_mul_cios(UINT_T* a, UINT_T* b, UINT_T* np, UINT_T* n,
     return s+1;
 }
 
-static int big_mont_sqr_cios(UINT_T* a, UINT_T* np, UINT_T* n,
-			     UINT_T* r, int s)
+STATIC INLINE int big_mont_sqr_cios(PRIVATE UINT_T* a,
+				    CONST UINT_T* np, CONST UINT_T* n,
+				    PRIVATE UINT_T* r, int s)
 {
     return big_mont_mul_cios(a, a, np, n, r, s);
 }

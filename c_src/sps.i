@@ -5,7 +5,9 @@
 #include "big3r.i"
 
 // P[2s]=0, n[s], np[s], r[s+1]
-static int big_mont_redc_sps(UINT_T* P,UINT_T* n,UINT_T* np,UINT_T* r,int s)
+static int big_mont_redc_sps(PRIVATE UINT_T* P,
+			     CONST UINT_T* n, CONST UINT_T* np,
+			     PRIVATE UINT_T* r,int s)
 {
     DECL3(u);
     UINT_T p1,p0;
@@ -40,8 +42,9 @@ static int big_mont_redc_sps(UINT_T* P,UINT_T* n,UINT_T* np,UINT_T* r,int s)
 //
 // a[s], b[s] r[s+1]
 // product a[s]*b[s] result is placed in r[s+1] 
-static int big_mont_mul_sps(UINT_T* a, UINT_T* b, UINT_T* np, UINT_T* n,
-			    UINT_T* r,int s)
+static int big_mont_mul_sps(PRIVATE UINT_T* a, PRIVATE UINT_T* b,
+			    CONST UINT_T* np, CONST UINT_T* n,
+			    PRIVATE UINT_T* r,int s)
 {
     UINT_T P[2*s];
     big_zero(P, BIGNUM_SIZE(P));
@@ -50,8 +53,9 @@ static int big_mont_mul_sps(UINT_T* a, UINT_T* b, UINT_T* np, UINT_T* n,
 }
 
 
-static int big_mont_sqr_sps(UINT_T* a, UINT_T* np, UINT_T* n,
-			    UINT_T* r,int s)
+static int big_mont_sqr_sps(PRIVATE UINT_T* a,
+			    CONST UINT_T* np, CONST UINT_T* n,
+			    PRIVATE UINT_T* r,int s)
 {
     UINT_T P[2*s];
     big_zero(P, BIGNUM_SIZE(P));

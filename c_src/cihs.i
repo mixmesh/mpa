@@ -4,8 +4,9 @@
 #define __CIHS_I__
 
 // a[s], b[s], r[s+2]
-static int big_mont_mul_cihs(UINT_T* a, UINT_T* b, UINT_T* np, UINT_T* n,
-			     UINT_T* r, int s)
+static int big_mont_mul_cihs(PRIVATE UINT_T* a, PRIVATE UINT_T* b,
+			     CONST UINT_T* np, CONST UINT_T* n,
+			     PRIVATE UINT_T* r, int s)
 {
     int i;
 
@@ -41,8 +42,9 @@ static int big_mont_mul_cihs(UINT_T* a, UINT_T* b, UINT_T* np, UINT_T* n,
     return s+1;
 }
 
-static int big_mont_sqr_cihs(UINT_T* a, UINT_T* np, UINT_T* n,
-			     UINT_T* r, int s)
+static int big_mont_sqr_cihs(PRIVATE UINT_T* a,
+			     CONST UINT_T* np, CONST UINT_T* n,
+			     PRIVATE UINT_T* r, int s)
 {
     return big_mont_mul_cihs(a, a, np, n, r, s);
 }
