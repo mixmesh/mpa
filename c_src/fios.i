@@ -4,7 +4,7 @@
 
 // a[s], b[s], r[s+2]!
 STATIC INLINE int big_mont_mul_fios(PRIVATE UINT_T* a, PRIVATE UINT_T* b,
-				    CONST UINT_T* np, CONST UINT_T* n,
+				    CONST UINT_T* n, CONST UINT_T* np,
 				    PRIVATE UINT_T* r,int s)
 {
     int i;
@@ -32,10 +32,10 @@ STATIC INLINE int big_mont_mul_fios(PRIVATE UINT_T* a, PRIVATE UINT_T* b,
 }
 
 STATIC INLINE int big_mont_sqr_fios(PRIVATE UINT_T* a,
-				    CONST UINT_T* np, CONST UINT_T* n,
+				    CONST UINT_T* n, CONST UINT_T* np,
 				    PRIVATE UINT_T* r, int s)
 {
-    return big_mont_mul_fios(a, a, np, n, r, s);
+    return big_mont_mul_fios(a, a, n, np, r, s);
 }
 
 #endif

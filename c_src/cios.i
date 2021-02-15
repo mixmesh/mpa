@@ -4,8 +4,8 @@
 
 // a[s], b[s], r[s+2]
 STATIC INLINE int big_mont_mul_cios(PRIVATE UINT_T* a, PRIVATE UINT_T* b,
-			     CONST UINT_T* np, CONST UINT_T* n,
-			     PRIVATE UINT_T* r, int s)
+				    CONST UINT_T* n, CONST UINT_T* np,
+				    PRIVATE UINT_T* r, int s)
 {
     int i;
 UNROLL    
@@ -33,10 +33,10 @@ UNROLL
 }
 
 STATIC INLINE int big_mont_sqr_cios(PRIVATE UINT_T* a,
-				    CONST UINT_T* np, CONST UINT_T* n,
+				    CONST UINT_T* n, CONST UINT_T* np, 
 				    PRIVATE UINT_T* r, int s)
 {
-    return big_mont_mul_cios(a, a, np, n, r, s);
+    return big_mont_mul_cios(a, a, n, np, r, s);
 }
 
 

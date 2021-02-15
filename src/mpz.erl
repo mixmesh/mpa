@@ -13,13 +13,11 @@
 -export([big_mont_mul/5, big_mont_mul/3]).
 -export([big_mont_sqr/4, big_mont_sqr/2]).
 -export([big_mont_pow/6, big_mont_pow/3]).
--export([mont/1, mont/2, mont_w/2, mont_w/3, redc/2]).
--export([mont_w_fips/1, mont_w_fips/2]).
+-export([mont/1, mont/2, redc/2]).
 
 -export([to_mont/2, from_mont/2]).
 -export([to_mont/3, from_mont/3]).
--export([format_mont/1,format_mont/2]).
--export([format_cnum/3]).
+
 %% test
 -export([all/0]).
 -export([test1/0, test3/0, test4/0]).
@@ -128,14 +126,6 @@ mont(Meth,N) when is_integer(N), N>0, ?is_odd(N) ->
     W = 8*erlang:system_info(wordsize),
     mont_w(Meth, N, W).
 
-mont_w_fips(W) ->
-    mont_w(fips,?P_1024,W).
-
-mont_w_fips(N, W) ->
-    mont_w(fips,N,W).
-
-mont_w(Meth,W) ->
-    mont_w(Meth,?P_1024,W).
 mont_w(Meth,N,W) when is_integer(N), N>0, ?is_odd(N) ->
     Ns = big_bits(N),
     K = ((Ns + W - 1) div W)*W,
@@ -160,33 +150,6 @@ to_mont(X, K, N) -> (X bsl K) rem N.
 from_mont(Y, #mont{n=N,ri=Ri}) -> from_mont(Y,Ri,N).
 from_mont(Y,Ri,N) -> (Y*Ri) rem N.
 
-%% Output current mont contants i C code format
-%% to be used by C/openCL etc
-%% W must be equal to sizeof(UINT_T) on target
-%% W is typically 32 for openCL (int), and 32 or 64 for C (int or long)
-format_mont(M) -> format_mont(M,32).
-format_mont(M,W) ->
-    S = (M#mont.k+W-1) div W,
-    io:format("#include \"~s.i\"\n", [M#mont.meth]),
-    io:format("CONST int mont_K = ~w;\n", [M#mont.k]),
-    io:format("CONST int mont_S = ~w;\n", [S]),
-    io:format("CONST UINT_T mont_N[~w] = ~s;\n", 
-	      [S,format_cnum(W,M#mont.k,M#mont.n)]),
-    io:format("CONST UINT_T mont_Np[~w] = ~s;\n", 
-	      [S,format_cnum(W,M#mont.k,M#mont.np)]),
-    io:format("CONST UINT_T mont_1[~w] = ~s;\n", 
-	      [S,format_cnum(W,M#mont.k,M#mont.m1)]),
-    ok.
-
-format_cnum(W,K,N) ->
-    Ds = format_cnum_(W,(1 bsl W)-1,K,N,[]),
-    DsL = ["0x"++tl(integer_to_list(D+(1 bsl W), 16)) || D <- Ds],
-    ["{",string:join(DsL,","),"}"].
-
-format_cnum_(_W, _Wm, K, _N, Acc) when K =< 0 ->
-    lists:reverse(Acc);
-format_cnum_(W, Wm, K, N, Acc) ->
-    format_cnum_(W, Wm, K-W, N bsr W, [(N band Wm) | Acc]).
 
 %%  Montgomery reduction
 redc(T, #mont{k=K,n=N,np=Np}) ->

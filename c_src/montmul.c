@@ -40,25 +40,24 @@ void big_print(UINT_T* x, int xl)
 {
     int i;
     printf("[%d]{\r\n", xl);
-    i = xl;
-    while(i >= 4) {
+    i = 0;
+    while(i+4 < xl) {
 	printf("  ");
-	printf("%016lx ", (unsigned long)x[i-1]);
-	printf("%016lx ", (unsigned long)x[i-2]);
-	printf("%016lx ", (unsigned long)x[i-3]);
-	printf("%016lx ", (unsigned long)x[i-4]);
-	i -= 4;
+	printf("%016lx ", (unsigned long)x[i]);
+	printf("%016lx ", (unsigned long)x[i+1]);
+	printf("%016lx ", (unsigned long)x[i+2]);
+	printf("%016lx ", (unsigned long)x[i+3]);
+	i += 4;
 	printf("\r\n");
     }
-    if (i >= 1) {
+    if (i < xl) {
 	printf("  ");
-	while(i >= 1) {
-	    printf("%016lx ", (unsigned long)x[i-1]);
-	    i--;
+	while(i < xl) {
+	    printf("%016lx ", (unsigned long)x[i]);
+	    i++;
 	}
     }
-    printf("\r\n");
-    printf("}");
+    printf("}\r\n");
 }
 
 int big_mont_norm(UINT_T* r, int rl, UINT_T* n, int nl)
@@ -79,26 +78,26 @@ int big_mont_mul(redc_type_t redc_type, UINT_T* a, UINT_T* b,
     
     switch(redc_type) {
     case REDC_SOS:
-	rl = big_mont_mul_sos(a, b, np, n, r, s);
+	rl = big_mont_mul_sos(a, b, n, np, r, s);
 	break;
     case REDC_SPS:
-	rl = big_mont_mul_sps(a, b, np, n, r, s);
+	rl = big_mont_mul_sps(a, b, n, np, r, s);
 	break;
     case REDC_CIOS:
 	big_zero(r, s+1);
-	rl = big_mont_mul_cios(a, b, np, n, r, s);
+	rl = big_mont_mul_cios(a, b, n, np, r, s);
 	break;
     case REDC_FIPS:
 	big_zero(r, s+1);
-	rl = big_mont_mul_fips(a, b, np, n, r, s);
+	rl = big_mont_mul_fips(a, b, n, np, r, s);
 	break;
     case REDC_FIOS:
 	big_zero(r, s+2);
-	rl = big_mont_mul_fios(a, b, np, n, r, s);
+	rl = big_mont_mul_fios(a, b, n, np, r, s);
 	break;
     case REDC_CIHS:
 	big_zero(r, s+2);
-	rl = big_mont_mul_cihs(a, b, np, n, r, s);
+	rl = big_mont_mul_cihs(a, b, n, np, r, s);
 	break;
     default:
 	return -1;
@@ -118,26 +117,26 @@ int big_mont_sqr(redc_type_t redc_type,
     BIGPRINT0("%sa=", a, s, "");
     switch(redc_type) {
     case REDC_SOS:
-	rl = big_mont_sqr_sos(a, np, n, r, s);
+	rl = big_mont_sqr_sos(a, n, np, r, s);
 	break;
     case REDC_SPS:
-	rl = big_mont_sqr_sps(a, np, n, r, s);
+	rl = big_mont_sqr_sps(a, n, np, r, s);
 	break;
     case REDC_CIOS:
 	big_zero(r, s+1);
-	rl = big_mont_sqr_cios(a, np, n, r, s);
+	rl = big_mont_sqr_cios(a, n, np, r, s);
 	break;
     case REDC_FIPS:
 	big_zero(r, s+1);
-	rl = big_mont_sqr_fips(a, np, n, r, s);
+	rl = big_mont_sqr_fips(a, n, np, r, s);
 	break;
     case REDC_FIOS:
 	big_zero(r, s+2);
-	rl = big_mont_sqr_fios(a, np, n, r, s);
+	rl = big_mont_sqr_fios(a, n, np, r, s);
 	break;
     case REDC_CIHS:
 	big_zero(r, s+2);
-	rl = big_mont_sqr_cihs(a, np, n, r, s);
+	rl = big_mont_sqr_cihs(a, n, np, r, s);
 	break;
     default:
 	return -1;
@@ -172,11 +171,16 @@ int big_mont_pow(redc_type_t redc_type,
     int j;
     int rl;
 
+    BIGPRINT1("%sN=", n, s, "");
+    BIGPRINT1("%sN'=", np, s, "");
+
     u = 0;
     big_copy(P[u], p, s);   // = mont(1) !
-
+    BIGPRINT1("%s1=P[u]=", P[u], s, "");
+    
     v = 0;
     big_copy(A[v], a, s);  // check al!
+    BIGPRINT1("%sA=A[u]=", A[v], s, "");
 
     xbits = big_bits(x, xl);
 
@@ -187,7 +191,7 @@ int big_mont_pow(redc_type_t redc_type,
 	for (bit = 0; bit < size; bit++) {
 	    if (xj & 1) {
 		big_mont_mul(redc_type,A[v],P[u],n,np,P[!u],s);
-		BIGPRINT1("%sP[!u]=", P[!u], s, "");		
+		BIGPRINT1("%sP[!u]=", P[!u], s, "");
 		u = !u;
 	    }
 	    // A' = A^2 (mod R)
@@ -199,7 +203,7 @@ int big_mont_pow(redc_type_t redc_type,
 	}
     }
     // r = A*P (mod R)
-    rl = big_mont_mul(redc_type, A[v], P[u], n, np, r, s);
-    BIGPRINT1("%sr=", r, s, "");
+    rl = big_mont_mul(redc_type,A[v],P[u],n,np,r,s);
+    BIGPRINT1("%sR=", r, s, "");
     return rl;
 }

@@ -32,8 +32,8 @@ STATIC  INLINE int big_mont_redc_sos(PRIVATE UINT_T* P,
 
 // a[s], b[s], r[s+1]
 STATIC INLINE int big_mont_mul_sos(PRIVATE UINT_T* a, PRIVATE UINT_T* b,
-			    CONST UINT_T* np, CONST UINT_T* n,
-			    PRIVATE UINT_T* r,int s)
+				   CONST UINT_T* n, CONST UINT_T* np,
+				   PRIVATE UINT_T* r,int s)
 {
     UINT_T P[2*s];
     big_zero(P, BIGNUM_SIZE(P));
@@ -42,8 +42,8 @@ STATIC INLINE int big_mont_mul_sos(PRIVATE UINT_T* a, PRIVATE UINT_T* b,
 }
 
 STATIC INLINE int big_mont_sqr_sos(PRIVATE UINT_T* a,
-			    CONST UINT_T* np, CONST UINT_T* n,
-			    PRIVATE UINT_T* r,int s)
+				   CONST UINT_T* n, CONST UINT_T* np, 
+				   PRIVATE UINT_T* r,int s)
 {
     UINT_T P[2*s];
     
