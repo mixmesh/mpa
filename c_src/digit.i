@@ -144,141 +144,141 @@
 #define LMASK  ((UINT_T)((((UINT_T)1) << HSHIFT)-1))
 #define HMASK  (LMASK << HSHIFT)
 
-STATIC INLINE void mula(UINT_T src1, UINT_T src2, UINT_T a,
-			UINT_T* prod1, UINT_T* prod0)
-{
-    UINTH_T a0 = src1;
-    UINTH_T a1 = src1 >> HSHIFT;
-    UINTH_T b0 = src2;
-    UINTH_T b1 = src2 >> HSHIFT;
-    UINT_T a0b0 = ((UINT_T)a0)*b0;
-    UINT_T a0b1 = ((UINT_T)a0)*b1;
-    UINT_T a1b0 = ((UINT_T)a1)*b0;
-    UINT_T a1b1 = ((UINT_T)a1)*b1;
-    UINT_T p0,p1,p2,c0;
+// MULA(X,Y,A,P1,P0)  (P1,P0) = X*Y + A
 
-    ADD(a0b0,a,&c0,&p0);
-    ADD(c0<<HSHIFT,p0>>HSHIFT,&p2,&p1);
-    ADD(p1,a0b1,&c0,&p1);
-    p2 += c0;
-    ADD(p1,a1b0,&c0,&p1);
-    p2 += c0;
-    ADD(p1,a1b1<<HSHIFT,&c0,&p1);
-    p2 +=c0;
-    ADD(a1b1,p2<<HSHIFT,&c0,&p2);
-    *prod1 = (p2 & HMASK) | (p1 >> HSHIFT);
-    *prod0 = (p1 << HSHIFT) | (p0 & LMASK);
+STATIC INLINE void MULA(UINT_T X, UINT_T Y, UINT_T A,
+			UINT_T* P1, UINT_T* P0)
+{
+    UINTH_T A0l = (X);
+    UINTH_T A1l = (X) >> HSHIFT;
+    UINTH_T B0l = (Y);
+    UINTH_T B1l = (Y) >> HSHIFT;
+    UINT_T A0B0l = ((UINT_T)A0l)*B0l;
+    UINT_T A0B1l = ((UINT_T)A0l)*B1l;
+    UINT_T A1B0l = ((UINT_T)A1l)*B0l;
+    UINT_T A1B1l = ((UINT_T)A1l)*B1l;
+    UINT_T P0l,P1l,P2l,C0l;
+
+    ADD(A0B0l,A,&C0l,&P0l);
+    ADD(C0l<<HSHIFT,P0l>>HSHIFT,&P2l,&P1l);
+    ADD(P1l,A0B1l,&C0l,&P1l);
+    P2l += C0l;
+    ADD(P1l,A1B0l,&C0l,&P1l);
+    P2l += C0l;
+    ADD(P1l,A1B1l<<HSHIFT,&C0l,&P1l);
+    P2l +=C0l;
+    ADD(A1B1l,P2l<<HSHIFT,&C0l,&P2l);
+    *P1 = (P2l & HMASK) | (P1l >> HSHIFT);
+    *P0 = (P1l << HSHIFT) | (P0l & LMASK);
 }
 
-STATIC INLINE void sqra(UINT_T src1, UINT_T a,
-			UINT_T* prod1, UINT_T* prod0)
+STATIC INLINE void SQRA(UINT_T X, UINT_T A,
+			UINT_T* P1, UINT_T* P0)
 {
-    UINTH_T a0 = src1;
-    UINTH_T a1 = src1 >> HSHIFT;
-    UINT_T a0a0 = ((UINT_T)a0)*a0;
-    UINT_T a0a1 = ((UINT_T)a0)*a1;
-    UINT_T a1a1 = ((UINT_T)a1)*a1;
-    UINT_T p0,p1,p2,c0;
+    UINTH_T A0l = (X);
+    UINTH_T A1l = (X) >> HSHIFT;
+    UINT_T A0A0l = ((UINT_T)A0l)*A0l;
+    UINT_T A0A1l = ((UINT_T)A0l)*A1l;
+    UINT_T A1A1l = ((UINT_T)A1l)*A1l;
+    UINT_T P0l,P1l,P2l,C0l;
 
-    ADD(a0a0,a,&c0,&p0);
-    ADD(c0<<HSHIFT,p0>>HSHIFT,&p2,&p1);
-    ADD(p1,a0a1,&c0,&p1);
-    p2 += c0;
-    ADD(p1,a0a1,&c0,&p1);
-    p2 += c0;
-    ADD(p1,a1a1<<HSHIFT,&c0,&p1);
-    p2 +=c0;
-    ADD(a1a1,p2<<HSHIFT,&c0,&p2);
-    *prod1 = (p2 & HMASK) | (p1 >> HSHIFT);
-    *prod0 = (p1 << HSHIFT) | (p0 & LMASK);
+    ADD(A0A0l,A,&C0l,&P0l);
+    ADD(C0l<<HSHIFT,P0l>>HSHIFT,&P2l,&P1l);
+    ADD(P1l,A0A1l,&C0l,&P1l);
+    P2l += C0l;
+    ADD(P1l,A0A1l,&C0l,&P1l);
+    P2l += C0l;
+    ADD(P1l,A1A1l<<HSHIFT,&C0l,&P1l);
+    P2l +=C0l;
+    ADD(A1A1l,P2l<<HSHIFT,&C0l,&P2l);
+    *P1 = (P2l & HMASK) | (P1l >> HSHIFT);
+    *P0 = (P1l << HSHIFT) | (P0l & LMASK);
 }
 
 // multiply add and return MSB
-// (prod1,_) = src1*src2 + a
-STATIC INLINE void mul1a(UINT_T src1, UINT_T src2, UINT_T a, UINT_T* prod1)
+// (P1,_) = X*Y + a
+STATIC INLINE void MUL1A(UINT_T X, UINT_T Y, UINT_T A, UINT_T* P1)
 {
-    UINTH_T a0 = src1;
-    UINTH_T a1 = src1 >> HSHIFT;
-    UINTH_T b0 = src2;
-    UINTH_T b1 = src2 >> HSHIFT;
-    UINT_T a0b0 = ((UINT_T)a0)*b0;
-    UINT_T a0b1 = ((UINT_T)a0)*b1;
-    UINT_T a1b0 = ((UINT_T)a1)*b0;
-    UINT_T a1b1 = ((UINT_T)a1)*b1;
-    UINT_T p0,p1,p2,c0;
+    UINTH_T A0l = (X);
+    UINTH_T A1l = (X) >> HSHIFT;
+    UINTH_T B0l = (Y);
+    UINTH_T B1l = (Y) >> HSHIFT;
+    UINT_T A0B0l = ((UINT_T)A0l)*B0l;
+    UINT_T A0B1l = ((UINT_T)A0l)*B1l;
+    UINT_T A1B0l = ((UINT_T)A1l)*B0l;
+    UINT_T A1B1l = ((UINT_T)A1l)*B1l;
+    UINT_T P0l,P1l,P2l,C0l;
 
-    ADD(a0b0,a,&c0,&p0);
-    ADD(c0<<HSHIFT,p0>>HSHIFT,&p2,&p1);
-    ADD(p1,a0b1,&c0,&p1);
-    p2 += c0;
-    ADD(p1,a1b0,&c0,&p1);
-    p2 += c0;
-    ADD(p1,a1b1<<HSHIFT,&c0,&p1);
-    p2 += c0;
-    ADD(a1b1,p2<<HSHIFT,&c0,&p2);
-    *prod1 = (p2 & HMASK) | (p1 >> HSHIFT);
+    ADD(A0B0l,A,&C0l,&P0l);
+    ADD(C0l<<HSHIFT,P0l>>HSHIFT,&P2l,&P1l);
+    ADD(P1l,A0B1l,&C0l,&P1l);
+    P2l += C0l;
+    ADD(P1l,A1B0l,&C0l,&P1l);
+    P2l += C0l;
+    ADD(P1l,A1B1l<<HSHIFT,&C0l,&P1l);
+    P2l += C0l;
+    ADD(A1B1l,P2l<<HSHIFT,&C0l,&P2l);
+    *P1 = (P2l & HMASK) | (P1l >> HSHIFT);
 }
 
 // multiply and return MSB
-// (prod1,_) = src1*src2
-STATIC INLINE void mul1(UINT_T src1, UINT_T src2, UINT_T* prod1)
+// (P1,_) = X*Y
+STATIC INLINE void MUL1(UINT_T X, UINT_T Y, UINT_T* P1)
 {
-    UINTH_T a0 = src1;
-    UINTH_T a1 = src1 >> HSHIFT;
-    UINTH_T b0 = src2;
-    UINTH_T b1 = src2 >> HSHIFT;
-    UINT_T a0b0 = ((UINT_T)a0)*b0;
-    UINT_T a0b1 = ((UINT_T)a0)*b1;
-    UINT_T a1b0 = ((UINT_T)a1)*b0;
-    UINT_T a1b1 = ((UINT_T)a1)*b1;
-    UINT_T p0,p1,p2,c0;
-
-    ADD(a0b0,a,&c0,&p0);
-    ADD(c0<<HSHIFT,p0>>HSHIFT,&p2,&p1);
-    ADD(p1,a0b1,&c0,&p1);
-    p2 += c0;
-    ADD(p1,a1b0,&c0,&p1);
-    p2 += c0;
-    ADD(p1,a1b1<<HSHIFT,&c0,&p1);
-    p2 +=c0;
-    ADD(a1b1,p2<<HSHIFT,&c0,&p2);
-    *prod1 = (p2 & HMASK) | (p1 >> HSHIFT);
+    UINTH_T A0l = (X);
+    UINTH_T A1l = (X) >> HSHIFT;
+    UINTH_T B0l = (Y);
+    UINTH_T B1l = (Y) >> HSHIFT;
+    UINT_T A0B0l = ((UINT_T)A0l)*B0l;
+    UINT_T A0B1l = ((UINT_T)A0l)*B1l;
+    UINT_T A1B0l = ((UINT_T)A1l)*B0l;
+    UINT_T A1B1l = ((UINT_T)A1l)*B1l;
+    UINT_T P0l=A0B0l,P1l=P0l>>HSHIFT,P2l=0,C0l;
+    
+    ADD(P1l,A0B1l,&C0l,&P1l);
+    P2l += C0l;
+    ADD(P1l,A1B0l,&C0l,&P1l);
+    P2l += C0l;
+    ADD(P1l,A1B1l<<HSHIFT,&C0l,&P1l);
+    P2l += C0l;
+    ADD(A1B1l,P2l<<HSHIFT,&C0l,&P2l);
+    *P1 = (P2l & HMASK) | (P1l >> HSHIFT);
 }
 
-STATIC INLINE void sqr(UINT_T src1,UINT_T* prod1, UINT_T* prod0)
+STATIC INLINE void SQR(UINT_T X,UINT_T* P1, UINT_T* P0)
 {
-    UINTH_T a0 = src1;
-    UINTH_T a1 = src1 >> HSHIFT;
-    UINT_T a0a0 = ((UINT_T)a0)*a0;
-    UINT_T a0a1 = ((UINT_T)a0)*a1;
-    UINT_T a1a1 = ((UINT_T)a1)*a1;
-    UINT_T p0=a0a0,p1=p0>>HSHIFT,p2=0,c0;
+    UINTH_T A0l = (X);
+    UINTH_T A1l = (X) >> HSHIFT;
+    UINT_T A0A0l = ((UINT_T)A0l)*A0l;
+    UINT_T A0A1l = ((UINT_T)A0l)*A1l;
+    UINT_T A1A1l = ((UINT_T)A1l)*A1l;
+    UINT_T P0l=A0A0l,P1l=P0l>>HSHIFT,P2l=0,C0l;
 
-    ADD(p1,a0a1,&c0,&p1);
-    p2 += c0;
-    ADD(p1,a0a1,&c0,&p1);
-    p2 += c0;    
-    ADD(p1,a1a1<<HSHIFT,&c0,&p1);
-    p2 +=c0;
-    ADD(a1a1,p2<<HSHIFT,&c0,&p2);
-    *prod1 = (p2 & HMASK) | (p1 >> HSHIFT);
-    *prod0 = (p1 << HSHIFT) | (p0 & LMASK);
+    ADD(P1l,A0A1l,&C0l,&P1l);
+    P2l += C0l;
+    ADD(P1l,A0A1l,&C0l,&P1l);
+    P2l += C0l;    
+    ADD(P1l,A1A1l<<HSHIFT,&C0l,&P1l);
+    P2l +=C0l;
+    ADD(A1A1l,P2l<<HSHIFT,&C0l,&P2l);
+    *P1 = (P2l & HMASK) | (P1l >> HSHIFT);
+    *P0 = (P1l << HSHIFT) | (P0l & LMASK);
 }
 
-STATIC INLINE void mulab(UINT_T src1, UINT_T src2, UINT_T a, UINT_T b,
-			 UINT_T* prod1, UINT_T* prod0)
+STATIC INLINE void MULAB(UINT_T X, UINT_T Y, UINT_T A, UINT_T B,
+			 UINT_T* P1, UINT_T* P0)
 {
-    UINT_T c0;
-    mula(src1, src2, a, prod1, prod0);
-    ADD(*prod0, b, &c0, prod0);
-    ADD(*prod1, c0, &c0, prod1);  // result is ignored
-    assert(c0 == 0);
+    UINT_T C0l;
+    MULA(X, Y, A, P1, P0);
+    ADD(*P0, B, &C0l, P0);
+    ADD(*P1, C0l, &C0l, P1);  // result is ignored
+    assert(C0l == 0);
 }
 
-STATIC INLINE void mul(UINT_T src1, UINT_T src2,
-		       UINT_T* prod1, UINT_T* prod0)
+STATIC INLINE void MUL(UINT_T X, UINT_T Y,
+		       UINT_T* P1, UINT_T* P0)
 {
-    mula(src1, src2, 0, prod1, prod0);
+    MULA(X, Y, 0, P1, P0);
 }
 
 #endif

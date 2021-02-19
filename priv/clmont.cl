@@ -19,6 +19,12 @@
 #define UINTD_T unsigned long
 #define UINTH_T unsigned short
 
+#define VSIZE 8
+#define VINT_T   int8
+#define VUINT_T  uint8
+#define VUINTD_T ulong8
+#define VUINTH_T ushort8
+
 #define STATIC
 #define INLINE inline
 #define GLOBAL __global
@@ -31,7 +37,6 @@
 
 // GENERATED: K,S,N,Np,1
 // generate:  mpz:format_mont(mpz:mont_w(Type,32)).
-
 
 #include "digit.i"
 
@@ -57,6 +62,20 @@ STATIC INLINE int norm(PRIVATE UINT_T* z, CONST UINT_T* n, int s)
 	for (i = 1; i < s; i++) {
 	    SUBB(z[i], n[i], B, &B, &z[i]);
 	}
+    }
+    return s;
+}
+
+// subtract n if needed masked version
+STATIC INLINE int normm(PRIVATE UINT_T* z, CONST UINT_T* n, int s)
+{
+    UINT_T m = (UINT_T)(-((INT_T)z[s])>>(sizeof(INT_T)-1));
+    UINT_T B;
+    int i;
+    
+    SUB(z[0], n[0] & m, &B, &z[0]);
+    for (i = 1; i < s; i++) {
+	SUBB(z[i], n[i] & m, B, &B, &z[i]);
     }
     return s;
 }
@@ -273,14 +292,14 @@ __kernel void montpow(GLOBAL UINT_T* a,   // in/out a[i]
 	    if (xj & 1) {
 		zero_to_private(P[!u], mont_S+2);
 		MMUL(A[v],P[u],mont_N,mont_Np,P[!u],mont_S);
-		norm(P[!u], mont_N, mont_S);
+		normm(P[!u], mont_N, mont_S);
 		// printf("P[!u]="); print_private(P[!u], mont_S);
 		u = !u;
 	    }
 	    // A' = A^2 (mod R)
 	    zero_to_private(A[!v], mont_S+2);
 	    MSQR(A[v],mont_N,mont_Np,A[!v],mont_S);
-	    norm(A[!v], mont_N, mont_S);
+	    normm(A[!v], mont_N, mont_S);
 	    // printf("A[!v]="); print_private(A[!v], mont_S);
 	    v = !v;
 	    
@@ -289,7 +308,7 @@ __kernel void montpow(GLOBAL UINT_T* a,   // in/out a[i]
     }
     zero_to_private(P[!u], mont_S+2);
     MMUL(A[v],P[u],mont_N,mont_Np,P[!u],mont_S);
-    norm(P[!u], mont_N, mont_S);
+    normm(P[!u], mont_N, mont_S);
     private_to_global(P[!u], r+mont_S*i, mont_S);
     // printf("R=P[!u]="); print_private(P[!u], mont_S);
 }
