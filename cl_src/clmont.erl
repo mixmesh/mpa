@@ -73,7 +73,7 @@ test_nif() ->
     Rm = mpz:big_mont_pow(Am, X, M),
     mpz:from_mont(Rm, M).
 
-%% Run 1000 pow operations
+%% Run test pow operations
 
 test() ->
     test(gpu).
@@ -95,18 +95,23 @@ test(DevType, Count) ->
 	{ok,ResData} ->
 	    Rs = decode_numbers(ResData,32,M#mont.k),
 	    Rs1 = [mpz:from_mont(Rm,M) || Rm <- Rs],
-	    %% FIXME: does not return correct result!
-	    %% lists:foreach(
-	    %% fun({R,Ai}) ->
-	    %% io:format("Ai=~w,X=~w,R=~w\n", [Ai,X,R]),
-	    %% Ri = mpz:powm(Ai, X, M#mont.n),
-	    %% io:format("Ri=~w\n", [Ri]),
-	    %% R = Ri
-	    %% end, lists:zip(Rs1, As)),
-	    Rs1;
+	    validate(As, X, Rs1, M);
 	Error ->
 	    Error
     end.
+
+validate([Ai|As],X,[R|Rs], M) ->
+    %% io:format("Ai=~w,X=~w,R=~w\n", [Ai,X,R]),
+    Ri = mpz:powm(Ai, X, M#mont.n),
+    %% io:format("Ri=~w\n", [Ri]),
+    if R =:= Ri ->
+	    validate(As, X, Rs, M);
+       true ->
+	    false
+    end;
+validate([], _X, [], _M) ->
+    true.
+
 
 run(AsData,XData,XBits,DevType,Count) ->
     E = clu:setup(DevType),
