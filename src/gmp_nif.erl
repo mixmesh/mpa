@@ -11,47 +11,64 @@
 -export([big_mod2_sqr/2]).
 -on_load(init/0).
 
+%%
 %% Exported: init
+%%
 
 init() ->
     ok = erlang:load_nif(filename:join(code:priv_dir(mpa), ?MODULE), 0).
 
+%%
 %% Exported: dlog
+%%
 
 dlog(_H, _G, _P) ->
     exit(nif_library_not_loaded).
 
-%% generate_safe_prime
-
+%%
+%% Exported: generate_safe_prime
+%%
 generate_safe_prime(_Len) ->
     exit(nif_library_not_loaded).
 
+%%
 %% Exported: mpz_gcd
+%%
 
 mpz_gcd(_Op1, _Op2) ->
     exit(nif_library_not_loaded).
 
+%%
 %% Exported: mpz_invert
+%%
 
 mpz_invert(_Op1, _Op2) ->
     exit(nif_library_not_loaded).
 
+%%
 %% Exported: mpz_lcm
+%%
 
 mpz_lcm(_Op1, _Op2) ->
     exit(nif_library_not_loaded).
 
+%%
 %% Exported: mpz_powm
+%%
 
 mpz_powm(_Base, _Exp, _Mod) ->
     exit(nif_library_not_loaded).
 
+%%
 %% Exported: mpz_pow_ui
+%%
 
 mpz_pow_ui(_Base, _Exp) ->
     exit(nif_library_not_loaded).
 
+%%
 %% Exported: mpz_probab_prime_p
+%%
 
 mpz_probab_prime_p(_N, _Reps) ->
     exit(nif_library_not_loaded).

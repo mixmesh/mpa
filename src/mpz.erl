@@ -39,7 +39,9 @@
 
 -define(is_odd(P), (((P) band 1) =:= 1)).
 
+%%
 %% Exported: dlog
+%%
 
 dlog(H, G, P) ->
   binary:decode_unsigned(
@@ -47,33 +49,43 @@ dlog(H, G, P) ->
                  binary:encode_unsigned(G),
                  binary:encode_unsigned(P))).
 
+%%
 %% Exported: generate_safe_prime
+%%
 
 generate_safe_prime(Len) ->
   binary:decode_unsigned(gmp_nif:generate_safe_prime(Len)).
 
+%%
 %% Exported: invert
+%%
 
 invert(Op1, Op2) ->
   binary:decode_unsigned(
     gmp_nif:mpz_invert(binary:encode_unsigned(Op1),
                        binary:encode_unsigned(Op2))).
 
+%%
 %% Exported: gcd
+%%
 
 gcd(Op1, Op2) ->
   binary:decode_unsigned(
     gmp_nif:mpz_gcd(binary:encode_unsigned(Op1),
                     binary:encode_unsigned(Op2))).
 
+%%
 %% Exported: lcm
+%%
 
 lcm(Op1, Op2) ->
   binary:decode_unsigned(
     gmp_nif:mpz_lcm(binary:encode_unsigned(Op1),
                     binary:encode_unsigned(Op2))).
 
+%%
 %% Exported: powm
+%%
 
 powm(Base, Exp, Mod) ->
   binary:decode_unsigned(
@@ -104,13 +116,17 @@ big_mont_pow(Am, X, #mont{meth=Meth,m1=M1,n=N,np=Np}) ->
 big_mont_pow(Meth,Am,X,M1,N,Np) ->
     gmp_nif:big_mont_pow(Meth,Am,X,M1,N,Np).
 
+%%
 %% Exported: pow_ui
+%%
 
 pow_ui(Base, Exp) ->
   binary:decode_unsigned(
     gmp_nif:mpz_pow_ui(binary:encode_unsigned(Base), Exp)).
 
+%%
 %% Exported: probab_prime_p
+%%
 
 probab_prime_p(N, Reps) ->
   gmp_nif:mpz_probab_prime_p(binary:encode_unsigned(N), Reps).
